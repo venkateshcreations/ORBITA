@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORBITA — Scientific Relay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--black:#020408;--dark:#111111;--dark2:#1A1A1A;--gold:#FFD700;--amber:#FF6B00;--white:#FFF8F0;--gold-dim:rgba(255,215,0,0.15);--amber-dim:rgba(255,107,0,0.15);--white-dim:rgba(255,248,240,0.05);--muted:rgba(255,248,240,0.5);--border:rgba(255,215,0,0.20);--font-display:'Orbitron',monospace;--font-body:'Exo 2',sans-serif}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--white);font-family:var(--font-body);font-weight:300;overflow-x:hidden;cursor:none}
+.cursor{position:fixed;width:12px;height:12px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .15s,height .15s,opacity .15s;mix-blend-mode:screen}
+.cursor-ring{position:fixed;width:36px;height:36px;border:1px solid var(--gold);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .25s ease;opacity:0.5}
+#starfield{position:fixed;inset:0;z-index:0;pointer-events:none}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 60px;display:flex;align-items:center;justify-content:space-between;transition:background .4s,backdrop-filter .4s}
+nav.scrolled{background:rgba(2,4,8,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:var(--font-display);font-size:1.1rem;font-weight:700;letter-spacing:0.3em;color:var(--white);text-decoration:none;display:flex;align-items:center;gap:12px}
+.logo-icon{width:32px;height:32px;border:2px solid var(--gold);border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;animation:spin 12s linear infinite}
+.logo-icon::before{content:'';position:absolute;width:6px;height:6px;background:var(--gold);border-radius:50%;top:-4px;left:50%;transform:translateX(-50%)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.nav-links{display:flex;gap:40px;list-style:none}
+.nav-links a{font-family:var(--font-display);font-size:0.65rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .25s;position:relative}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--gold);transition:width .3s}
+.nav-links a:hover{color:var(--white)}.nav-links a:hover::after{width:100%}
+#hero{position:relative;z-index:1;min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;padding:120px 60px 60px}
+.hero-eyebrow{font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.5em;color:var(--gold);text-transform:uppercase;margin-bottom:20px;opacity:0;animation:fadeUp .8s .3s forwards}
+.hero-title{font-family:var(--font-display);font-size:clamp(2rem,5vw,4rem);font-weight:900;line-height:0.95;letter-spacing:-0.01em;margin-bottom:20px;opacity:0;animation:fadeUp .8s .5s forwards}
+.hero-title .line-accent{color:var(--gold);display:block}
+.hero-sub{font-size:clamp(0.9rem,1.3vw,1.1rem);font-weight:300;color:var(--muted);max-width:620px;line-height:1.7;margin:0 auto 32px;opacity:0;animation:fadeUp .8s .7s forwards}
+.spec-badge{font-family:var(--font-display);font-size:0.5rem;letter-spacing:0.3em;color:var(--gold);border:1px solid var(--gold-dim);padding:6px 16px;display:inline-block;opacity:0;animation:fadeUp .8s .9s forwards}
+#content{position:relative;z-index:1;padding:80px 60px}
+.section-tag{font-family:var(--font-display);font-size:0.55rem;letter-spacing:0.5em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:block}
+.section-title{font-family:var(--font-display);font-size:clamp(1.4rem,3vw,2.2rem);font-weight:700;line-height:1.1;margin-bottom:16px}
+.section-sub{font-size:0.95rem;font-weight:300;color:var(--muted);line-height:1.7;max-width:600px;margin-bottom:40px}
+.caps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.cap-card{background:var(--dark);border:1px solid var(--border);padding:32px 24px;transition:all .3s;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 0px))}
+.cap-card:hover{border-color:var(--gold);background:var(--gold-dim);transform:translateY(-4px)}
+.cap-icon{font-size:2rem;margin-bottom:16px;display:block}.cap-name{font-family:var(--font-display);font-size:0.75rem;font-weight:700;letter-spacing:0.15em;margin-bottom:10px}
+.cap-desc{font-size:0.85rem;color:var(--muted);line-height:1.6;margin-bottom:16px}
+.cap-tag{font-family:var(--font-display);font-size:0.45rem;letter-spacing:0.15em;padding:3px 8px;border:1px solid rgba(255,215,0,0.2);color:var(--muted);text-transform:uppercase;display:inline-block;margin-right:4px;margin-bottom:4px}
+.specs-table{margin-top:32px;width:100%;border-collapse:collapse}
+.specs-table th{font-family:var(--font-display);font-size:0.5rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.specs-table td{font-size:0.85rem;color:var(--white);padding:12px 12px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.specs-table tr:hover td{background:var(--gold-dim)}
+.badge{display:inline-block;padding:2px 8px;font-family:var(--font-display);font-size:0.45rem;letter-spacing:0.15em;border-radius:2px;text-transform:uppercase}
+.badge-gold{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(255,215,0,0.3)}
+.badge-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,107,0,0.3)}
+.missions{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
+.mission-card{background:var(--dark);border:1px solid var(--border);padding:20px 24px;border-left:3px solid var(--gold);transition:all .3s}
+.mission-card:hover{background:var(--gold-dim);border-color:var(--gold)}
+.miss-name{font-family:var(--font-display);font-size:0.7rem;font-weight:700;letter-spacing:0.1em;margin-bottom:4px}
+.miss-info{font-size:0.8rem;color:var(--muted);line-height:1.4}
+.miss-tag{font-family:var(--font-display);font-size:0.45rem;letter-spacing:0.15em;color:var(--gold);display:block;margin-top:6px}
+.probe-list{display:flex;flex-direction:column;gap:12px;margin-top:24px}
+.probe-item{display:grid;grid-template-columns:90px 1fr 60px;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);font-size:0.85rem}
+.probe-item span{color:var(--muted)}
+.probe-item .probe-name{color:var(--white);font-family:var(--font-display);font-size:0.65rem;font-weight:600;letter-spacing:0.1em}
+.probe-status{font-family:var(--font-display);font-size:0.5rem;letter-spacing:0.1em;text-align:right}
+footer{border-top:1px solid var(--border);padding:60px;position:relative;z-index:1;background:var(--dark)}
+.footer-top{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:60px;margin-bottom:48px}
+.footer-brand .nav-logo{margin-bottom:16px;display:inline-flex}
+.footer-brand p{font-size:0.85rem;color:var(--muted);line-height:1.7;max-width:280px}
+.footer-col h4{font-family:var(--font-display);font-size:0.6rem;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--white);margin-bottom:20px}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.footer-col a{font-size:0.85rem;color:var(--muted);text-decoration:none;transition:color .2s}
+.footer-col a:hover{color:var(--gold)}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:32px;border-top:1px solid var(--border)}
+.footer-copy{font-size:0.75rem;color:var(--muted);letter-spacing:0.05em}
+.footer-itu{font-family:var(--font-display);font-size:0.5rem;letter-spacing:0.25em;color:var(--muted)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .8s ease,transform .8s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+@media(max-width:1024px){nav{padding:16px 24px}.nav-links{display:none}.caps-grid{grid-template-columns:1fr 1fr}.missions{grid-template-columns:1fr}.probe-item{grid-template-columns:1fr 1fr}.footer-top{grid-template-columns:1fr 1fr}#hero,#content{padding:100px 24px 40px}footer{padding:40px 24px}}
+@media(max-width:640px){.caps-grid{grid-template-columns:1fr}.missions{grid-template-columns:1fr}.probe-item{grid-template-columns:1fr}.footer-top{grid-template-columns:1fr;gap:32px}.footer-bottom{flex-direction:column;gap:12px;text-align:center}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<canvas id="starfield"></canvas>
+
+<nav id="nav">
+  <a href="index.html" class="nav-logo"><span class="logo-icon"></span>ORBITA</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#probes">Probes</a></li>
+    <li><a href="#specs">Specifications</a></li>
+  </ul>
+  <a href="contact.html"><button class="nav-cta" style="font-family:var(--font-display);font-size:0.6rem;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;padding:10px 24px;border:1px solid var(--gold);background:transparent;color:var(--gold);cursor:none;transition:all .3s;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)">Contact</button></a>
+</nav>
+
+<section id="hero">
+  <span class="hero-eyebrow">Capability Overview</span>
+  <h1 class="hero-title">Scientific<br><span class="line-accent">Relay</span></h1>
+  <p class="hero-sub">High-data-rate telemetry relay for Earth observation satellites, weather platforms, and deep-space probes. Our global network of X/S-band ground stations and TDRS-compatible relay terminals provides lossless data downlink from any orbital regime — including interplanetary missions.</p>
+  <span class="spec-badge">X-BAND · S-BAND · TDRS · CCSDS · DSN</span>
+</section>
+
+<section id="content">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-bottom:60px">
+    <div class="reveal">
+      <span class="section-tag">Science Data Transport</span>
+      <h2 class="section-title">Downlinking<br>Discovery</h2>
+      <p class="section-sub">ORBITA's scientific relay service is purpose-built for the unique demands of research and exploration missions. Our ground stations support X-band (8.0–8.4 GHz) and S-band (2.2–2.3 GHz) reception with cryogenically cooled low-noise amplifiers achieving receiver noise temperatures below 20 K. Data rates reach 1.2 Gbps for LEO Earth observation downlinks and 150 Mbps for deep-space probes at Lunar distance.</p>
+      <p class="section-sub">All relay services comply with CCSDS Space Packet Protocol, including Proximity-1 for Mars relay operations and CFDP for file delivery. Our TDRS-compatible payload enables bent-pipe relay for LEO satellites outside ground station line-of-sight.</p>
+    </div>
+    <div class="reveal" style="transition-delay:.15s">
+      <div class="missions">
+        <div class="mission-card"><div class="miss-name">Earth Observation</div><div class="miss-info">Sentinel-class and commercial EO satellite downlink. X-band 800 Mbps real-time data transfer to processing centres with &lt;5-minute latency.</div><span class="miss-tag">6U-12U CUBESATS TO 5T PLATFORMS</span></div>
+        <div class="mission-card"><div class="miss-name">Weather Satellite Relay</div><div class="miss-info">GOES/MTG/Meteosat-compatible data relay. S-band HRIT/LRIT, LRPT, and AHRPT broadcast capture for meteorological agencies.</div><span class="miss-tag">HRIT · LRIT · AHRPT</span></div>
+        <div class="mission-card"><div class="miss-name">Deep-Space Probes</div><div class="miss-info">Interplanetary mission support via DSN-compatible uplink/downlink. X-band 150 Mbps at 1 AU. Ka-band 50 kbps at Mars distance.</div><span class="miss-tag">DSN · CCSDS 401 · PROX-1</span></div>
+        <div class="mission-card"><div class="miss-name">ISS &amp; Human Spaceflight</div><div class="miss-info">TDRS-compatible bent-pipe relay for crewed missions. Voice, video, telemetry, and experiment data with priority pre-emption.</div><span class="miss-tag">TDRS · KU-BAND · S-BAND</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:60px">
+    <span class="section-tag">Active Missions</span>
+    <h2 class="section-title">Supported Science Platforms</h2>
+    <div class="probe-list">
+      <div class="probe-item"><span class="probe-name">ORBITA-ZARYA-EO1</span><span>X-Band 1.2 Gbps · 550 km SSO · 12 passes/day</span><span class="probe-status" style="color:var(--gold)">NOMINAL</span></div>
+      <div class="probe-item"><span class="probe-name">ATMOS-SCAN M6</span><span>S-Band LRIT · GOES-18 compatible · 10 min updates</span><span class="probe-status" style="color:var(--gold)">NOMINAL</span></div>
+      <div class="probe-item"><span class="probe-name">DEEP-SEEK 7</span><span>X-Band 150 Mbps · Lunar distance · 4h contact window</span><span class="probe-status" style="color:var(--gold)">NOMINAL</span></div>
+      <div class="probe-item"><span class="probe-name">MARS-SURVEYOR</span><span>Proximity-1 UHF · Mars orbit · 6 Mbps relay rate</span><span class="probe-status" style="color:var(--amber)">CRUISE PHASE</span></div>
+      <div class="probe-item"><span class="probe-name">STARDUST-NEXT</span><span>Ka-Band 50 kbps · 2.5 AU · DSN array mode</span><span class="probe-status" style="color:var(--amber)">EXTENDED</span></div>
+      <div class="probe-item"><span class="probe-name">ICE-SAT POLAR</span><span>S-Band TTC + X-Band payload · 89° inclination</span><span class="probe-status" style="color:var(--gold)">NOMINAL</span></div>
+    </div>
+  </div>
+
+  <div class="reveal">
+    <span class="section-tag">Technical Specifications</span>
+    <h2 class="section-title">Relay Service Parameters</h2>
+    <table class="specs-table">
+      <thead><tr><th>Parameter</th><th>X-Band EO</th><th>S-Band TT&amp;C</th><th>Deep-Space Ka</th></tr></thead>
+      <tbody>
+        <tr><td>Frequency</td><td>8.0–8.4 GHz</td><td>2.2–2.3 GHz</td><td>31.8–32.3 GHz</td></tr>
+        <tr><td>Max Data Rate</td><td>1.2 Gbps</td><td>10 Mbps</td><td>150 Mbps (1 AU)</td></tr>
+        <tr><td>Antenna Diameter</td><td>13.0 m</td><td>9.1 m</td><td>34.0 m</td></tr>
+        <tr><td>G/T</td><td>42.5 dB/K</td><td>34.1 dB/K</td><td>56.3 dB/K</td></tr>
+        <tr><td>Modulation</td><td>OQPSK / 8PSK</td><td>BPSK / PCM-PM</td><td>BPSK / GMSK</td></tr>
+        <tr><td>Protocol</td><td>CCSDS 131.2-B</td><td>CCSDS 401.0-B</td><td>CCSDS 401 + CFDP</td></tr>
+        <tr><td>Status</td><td><span class="badge badge-gold">OPERATIONAL</span></td><td><span class="badge badge-gold">OPERATIONAL</span></td><td><span class="badge badge-amber">EXPANDING</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand"><a href="index.html" class="nav-logo"><span class="logo-icon"></span>ORBITA</a><p>Sovereign space communications infrastructure for the next century of human connectivity.</p></div>
+    <div class="footer-col"><h4>Capabilities</h4><ul><li><a href="capabilities-satellite-broadband.html">Satellite Broadband</a></li><li><a href="capabilities-secure-government.html">Secure Government</a></li><li><a href="capabilities-maritime-aviation.html">Maritime & Aviation</a></li><li><a href="capabilities-direct-broadcast.html">Direct Broadcast</a></li><li><a href="capabilities-scientific-relay.html">Scientific Relay</a></li></ul></div>
+    <div class="footer-col"><h4>Network</h4><ul><li><a href="network-leo-constellation.html">LEO Constellation</a></li><li><a href="network-geo-platform.html">GEO Platform</a></li><li><a href="network-ground-stations.html">Ground Stations</a></li><li><a href="network-spectrum-portfolio.html">Spectrum Portfolio</a></li><li><a href="network-orbital-filing.html">Orbital Filing</a></li></ul></div>
+    <div class="footer-col"><h4>Organization</h4><ul><li><a href="organization-about.html">About ORBITA</a></li><li><a href="organization-partnerships.html">Partnerships</a></li><li><a href="organization-itu-compliance.html">ITU Compliance</a></li><li><a href="organization-careers.html">Careers</a></li><li><a href="organization-press-media.html">Press & Media</a></li></ul></div>
+  </div>
+  <div class="footer-bottom"><span class="footer-copy">© 2026 ORBITA Space Communications. All rights reserved.</span><span class="footer-itu">ITU FILING: 2891-A · CCSDS COMPLIANT</span></div>
+</footer>
+
+<script>
+const cursor=document.getElementById('cursor'),ring=document.getElementById('cursorRing');let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
+function animCursor(){rx+=(mx-rx)*0.15;ry+=(my-ry)*0.15;cursor.style.left=mx+'px';cursor.style.top=my+'px';ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animCursor)}
+animCursor();
+document.querySelectorAll('a,button,.cap-card').forEach(el=>{el.addEventListener('mouseenter',()=>{cursor.style.width='20px';cursor.style.height='20px';ring.style.width='56px';ring.style.height='56px';ring.style.opacity='0.8'});el.addEventListener('mouseleave',()=>{cursor.style.width='12px';cursor.style.height='12px';ring.style.width='36px';ring.style.height='36px';ring.style.opacity='0.5'})});
+const sf=document.getElementById('starfield'),sfCtx=sf.getContext('2d');let stars=[];function resizeStarfield(){sf.width=window.innerWidth;sf.height=window.innerHeight}
+function initStars(){stars=[];for(let i=0;i<280;i++){stars.push({x:Math.random()*sf.width,y:Math.random()*sf.height,r:Math.random()*1.4+0.2,alpha:Math.random()*0.7+0.1,speed:Math.random()*0.3+0.05,drift:(Math.random()-0.5)*0.1,twinkle:Math.random()*Math.PI*2})}}
+function drawStars(t){sfCtx.clearRect(0,0,sf.width,sf.height);stars.forEach(s=>{s.twinkle+=0.02;const a=s.alpha*(0.6+0.4*Math.sin(s.twinkle));sfCtx.beginPath();sfCtx.arc(s.x,s.y,s.r,0,Math.PI*2);sfCtx.fillStyle=`rgba(255,248,240,${a})`;sfCtx.fill();s.y+=s.speed*0.2;s.x+=s.drift;if(s.y>sf.height){s.y=0;s.x=Math.random()*sf.width}})}
+resizeStarfield();initStars();window.addEventListener('resize',()=>{resizeStarfield();initStars()});
+const nav=document.getElementById('nav');window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled',window.scrollY>80)});
+const reveals=document.querySelectorAll('.reveal');const revObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible')}})},{threshold:0.12});reveals.forEach(r=>revObs.observe(r));
+function mainLoop(t){drawStars(t);requestAnimationFrame(mainLoop)}
+requestAnimationFrame(mainLoop);
+</script>
+</body>
+</html>

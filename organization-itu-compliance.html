@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITU Compliance — ORBITA Space Communications</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #020408; --dark: #111111; --dark2: #1A1A1A;
+    --gold: #FFD700; --amber: #FF6B00; --white: #FFF8F0;
+    --gold-dim: rgba(255,215,0,0.15); --amber-dim: rgba(255,107,0,0.15);
+    --white-dim: rgba(255,248,240,0.05); --muted: rgba(255,248,240,0.5);
+    --border: rgba(255,215,0,0.20);
+    --font-display: 'Orbitron', monospace; --font-body: 'Exo 2', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--black); color: var(--white);
+    font-family: var(--font-body); font-weight: 300; overflow-x: hidden; cursor: none;
+  }
+  .cursor { position:fixed; width:12px; height:12px; background:var(--gold); border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); transition:width .15s,height .15s,opacity .15s; mix-blend-mode:screen; }
+  .cursor-ring { position:fixed; width:36px; height:36px; border:1px solid var(--gold); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:all .25s ease; opacity:0.5; }
+  #starfield { position:fixed; inset:0; z-index:0; pointer-events:none; }
+  nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:20px 60px; display:flex; align-items:center; justify-content:space-between; transition:background .4s, backdrop-filter .4s; }
+  nav.scrolled { background:rgba(2,4,8,0.85); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); }
+  .nav-logo { font-family:var(--font-display); font-size:1.1rem; font-weight:700; letter-spacing:0.3em; color:var(--white); text-decoration:none; display:flex; align-items:center; gap:12px; }
+  .logo-icon { width:32px; height:32px; border:2px solid var(--gold); border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; animation:spin 12s linear infinite; }
+  .logo-icon::before { content:''; position:absolute; width:6px; height:6px; background:var(--gold); border-radius:50%; top:-4px; left:50%; transform:translateX(-50%); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .nav-links { display:flex; gap:40px; list-style:none; }
+  .nav-links a { font-family:var(--font-display); font-size:0.65rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); text-decoration:none; transition:color .25s; position:relative; }
+  .nav-links a::after { content:''; position:absolute; bottom:-4px; left:0; width:0; height:1px; background:var(--gold); transition:width .3s; }
+  .nav-links a:hover { color:var(--white); }
+  .nav-links a:hover::after { width:100%; }
+  .nav-cta { font-family:var(--font-display); font-size:0.6rem; font-weight:700; letter-spacing:0.25em; text-transform:uppercase; padding:10px 24px; border:1px solid var(--gold); background:transparent; color:var(--gold); cursor:none; transition:all .3s; clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%); text-decoration:none; }
+  .nav-cta:hover { background:var(--gold); color:var(--black); }
+  #hero { position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; overflow:hidden; }
+  .orbit-system { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .orbit-ring { position:absolute; border-radius:50%; border:1px solid var(--gold-dim); }
+  .orbit-ring:nth-child(1) { width:300px; height:300px; animation:orbit-rotate 20s linear infinite; border-color:rgba(255,215,0,0.2); }
+  .orbit-ring:nth-child(2) { width:480px; height:200px; animation:orbit-rotate2 30s linear infinite; border-color:rgba(255,215,0,0.12); transform:rotateX(75deg); }
+  .orbit-ring:nth-child(3) { width:680px; height:280px; animation:orbit-rotate3 45s linear infinite; border-color:rgba(255,107,0,0.1); transform:rotateX(70deg) rotateZ(30deg); }
+  .orbit-ring:nth-child(4) { width:900px; height:360px; animation:orbit-rotate4 60s linear infinite; border-color:rgba(255,215,0,0.07); transform:rotateX(75deg) rotateZ(-20deg); }
+  .satellite { position:absolute; width:8px; height:8px; background:var(--gold); border-radius:50%; box-shadow:0 0 12px var(--gold),0 0 24px rgba(255,215,0,0.4); }
+  .satellite::after { content:''; position:absolute; right:8px; top:50%; width:14px; height:1px; background:linear-gradient(to left,var(--gold),transparent); transform:translateY(-50%); }
+  .orbit-ring:nth-child(1) .satellite { top:-4px; left:50%; transform:translateX(-50%); }
+  .orbit-ring:nth-child(2) .satellite { right:-4px; top:50%; transform:translateY(-50%); }
+  .orbit-ring:nth-child(3) .satellite { top:-4px; right:20%; }
+  @keyframes orbit-rotate { to { transform:rotate(360deg); } }
+  @keyframes orbit-rotate2 { from { transform:rotateX(75deg) rotateZ(0deg); } to { transform:rotateX(75deg) rotateZ(360deg); } }
+  @keyframes orbit-rotate3 { from { transform:rotateX(70deg) rotateZ(30deg); } to { transform:rotateX(70deg) rotateZ(390deg); } }
+  @keyframes orbit-rotate4 { from { transform:rotateX(75deg) rotateZ(-20deg); } to { transform:rotateX(75deg) rotateZ(340deg); } }
+  .earth-glow { position:absolute; width:160px; height:160px; border-radius:50%; background:radial-gradient(circle at 35% 35%,var(--dark),var(--black)); box-shadow:0 0 60px rgba(255,215,0,0.15),0 0 120px rgba(255,215,0,0.08), inset 0 0 40px rgba(255,215,0,0.03); pointer-events:none; }
+  .earth-glow::before { content:''; position:absolute; inset:0; border-radius:50%; background:radial-gradient(ellipse at 30% 40%,rgba(255,215,0,0.06),transparent 60%); animation:earth-shimmer 4s ease-in-out infinite alternate; }
+  @keyframes earth-shimmer { to { opacity:0.4; } }
+  .hero-content { position:relative; z-index:2; }
+  .hero-eyebrow { font-family:var(--font-display); font-size:0.6rem; letter-spacing:0.5em; color:var(--gold); text-transform:uppercase; margin-bottom:28px; opacity:0; animation:fadeUp .8s .3s forwards; }
+  .hero-title { font-family:var(--font-display); font-size:clamp(2.4rem,6vw,5rem); font-weight:900; line-height:0.95; letter-spacing:-0.01em; margin-bottom:24px; opacity:0; animation:fadeUp .8s .5s forwards; }
+  .hero-title .line-accent { color:var(--gold); display:block; }
+  .hero-sub { font-size:clamp(0.95rem,1.3vw,1.15rem); font-weight:300; color:var(--muted); max-width:600px; line-height:1.7; margin:0 auto 40px; opacity:0; animation:fadeUp .8s .7s forwards; }
+  section { position:relative; z-index:1; padding:100px 60px; }
+  .section-tag { font-family:var(--font-display); font-size:0.55rem; letter-spacing:0.5em; text-transform:uppercase; color:var(--gold); margin-bottom:16px; display:block; }
+  .section-title { font-family:var(--font-display); font-size:clamp(1.8rem,3.5vw,2.8rem); font-weight:700; line-height:1.1; margin-bottom:20px; }
+  .section-sub { font-size:0.95rem; font-weight:300; color:var(--muted); line-height:1.7; max-width:680px; }
+  .compliance-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .comp-card { background:var(--dark); border:1px solid var(--border); padding:32px; transition:all .3s; }
+  .comp-card:hover { border-color:var(--gold); background:var(--gold-dim); transform:translateY(-4px); }
+  .comp-icon { font-size:2rem; margin-bottom:16px; }
+  .comp-card h3 { font-family:var(--font-display); font-size:0.75rem; font-weight:700; letter-spacing:0.12em; margin-bottom:8px; color:var(--gold); }
+  .comp-card p { font-size:0.85rem; color:var(--muted); line-height:1.6; }
+  .filing-table { width:100%; border-collapse:collapse; margin-top:40px; }
+  .filing-table th { font-family:var(--font-display); font-size:0.5rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); padding:12px; text-align:left; border-bottom:1px solid var(--border); }
+  .filing-table td { font-size:0.8rem; color:var(--white); padding:14px 12px; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .filing-table tr:hover td { background:var(--gold-dim); }
+  .badge { display:inline-block; padding:2px 10px; font-family:var(--font-display); font-size:0.45rem; letter-spacing:0.15em; border-radius:2px; text-transform:uppercase; }
+  .badge-gold { background:var(--gold-dim); color:var(--gold); border:1px solid rgba(255,215,0,0.3); }
+  .badge-amber { background:var(--amber-dim); color:var(--amber); border:1px solid rgba(255,107,0,0.3); }
+  .stack-list { display:flex; flex-direction:column; gap:12px; margin-top:32px; max-width:700px; }
+  .stack-item { display:flex; align-items:center; gap:16px; padding:16px 20px; border-left:3px solid var(--gold); background:var(--dark); transition:all .3s; }
+  .stack-item:hover { background:var(--gold-dim); padding-left:28px; }
+  .stack-item h4 { font-family:var(--font-display); font-size:0.65rem; font-weight:600; letter-spacing:0.1em; margin-bottom:2px; }
+  .stack-item p { font-size:0.75rem; color:var(--muted); }
+  footer { border-top:1px solid var(--border); padding:60px; position:relative; z-index:1; background:var(--dark); }
+  .footer-top { display:grid; grid-template-columns:2fr repeat(3,1fr); gap:60px; margin-bottom:48px; }
+  .footer-brand .nav-logo { margin-bottom:16px; display:inline-flex; }
+  .footer-brand p { font-size:0.85rem; color:var(--muted); line-height:1.7; max-width:280px; }
+  .footer-col h4 { font-family:var(--font-display); font-size:0.6rem; font-weight:700; letter-spacing:0.3em; text-transform:uppercase; color:var(--white); margin-bottom:20px; }
+  .footer-col ul { list-style:none; display:flex; flex-direction:column; gap:10px; }
+  .footer-col a { font-size:0.85rem; color:var(--muted); text-decoration:none; transition:color .2s; }
+  .footer-col a:hover { color:var(--gold); }
+  .footer-bottom { display:flex; justify-content:space-between; align-items:center; padding-top:32px; border-top:1px solid var(--border); }
+  .footer-copy { font-size:0.75rem; color:var(--muted); letter-spacing:0.05em; }
+  .footer-itu { font-family:var(--font-display); font-size:0.5rem; letter-spacing:0.25em; color:var(--muted); }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+  .reveal { opacity:0; transform:translateY(40px); transition:opacity .8s ease, transform .8s ease; }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+  @media (max-width:1024px) {
+    nav { padding:16px 24px; } .nav-links { display:none; }
+    .compliance-grid { grid-template-columns:1fr; }
+    section { padding:80px 24px; }
+    .footer-top { grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:640px) {
+    footer { padding:40px 24px; }
+    .footer-top { grid-template-columns:1fr; gap:32px; }
+    .footer-bottom { flex-direction:column; gap:12px; text-align:center; }
+    .filing-table { font-size:0.7rem; }
+  }
+  @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<canvas id="starfield"></canvas>
+
+<nav id="nav">
+  <a href="index.html" class="nav-logo"><span class="logo-icon"></span>ORBITA</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="organization-about.html">About</a></li>
+    <li><a href="organization-partnerships.html">Partnerships</a></li>
+    <li><a href="organization-careers.html">Careers</a></li>
+    <li><a href="organization-press-media.html">Press</a></li>
+  </ul>
+  <a href="contact.html" class="nav-cta">Contact Mission Control</a>
+</nav>
+
+<section id="hero">
+  <div class="orbit-system">
+    <div class="orbit-ring"><span class="satellite"></span></div>
+    <div class="orbit-ring"><span class="satellite"></span></div>
+    <div class="orbit-ring"><span class="satellite"></span></div>
+    <div class="orbit-ring"></div>
+    <div class="earth-glow"></div>
+  </div>
+  <div class="hero-content">
+    <span class="hero-eyebrow">Regulatory Framework</span>
+    <h1 class="hero-title">ITU <span class="line-accent">Compliance</span></h1>
+    <p class="hero-sub">ORBITA operates under International Telecommunication Union Radio Regulations, CCSDS space data standards, and ISO security certifications. Every satellite, frequency band, and orbital slot is fully licensed and coordinated.</p>
+  </div>
+</section>
+
+<section>
+  <div class="reveal" style="text-align:center;margin-bottom:60px">
+    <span class="section-tag">Standards & Certification</span>
+    <h2 class="section-title">Regulatory Compliance Framework</h2>
+    <p class="section-sub" style="margin:0 auto">Full compliance with ITU Radio Regulations, Articles 22 (space services) and 9 (coordination). Spectrum filings registered through the ITU BR International Frequency Information System.</p>
+  </div>
+  <div class="compliance-grid reveal">
+    <div class="comp-card"><div class="comp-icon">📜</div><h3>ITU Radio Regulations</h3><p>All orbital slots and frequency assignments are filed with the ITU Radiocommunication Bureau (BR) per Article 22. Advance publication, coordination, and notification procedures completed for 14 satellite networks across LEO, MEO, GEO, and HEO.</p></div>
+    <div class="comp-card"><div class="comp-icon">🛡️</div><h3>ISO 17825 Certified</h3><p>Information security management system certified to ISO/IEC 17825:2024. Cryptographic module testing compliant with FIPS 140-3 Level 2 requirements for all on-orbit command links.</p></div>
+    <div class="comp-card"><div class="comp-icon">📡</div><h3>CCSDS Standards</h3><p>Full adherence to CCSDS 130.0-G (Space Link Extension), CCSDS 727.0 (CFDP), and CCSDS 734.0 (Delay-Tolerant Networking). Interoperable with NASA, ESA, and JAXA mission control centres.</p></div>
+    <div class="comp-card"><div class="comp-icon">📋</div><h3>Spectrum Filings</h3><p>274 individual frequency assignments registered. Coordination agreements signed with 41 administrations. No unresolved interference cases since inception.</p></div>
+  </div>
+</section>
+
+<section style="background:linear-gradient(to bottom,transparent,var(--dark2) 30%,var(--dark2) 70%,transparent)">
+  <div class="reveal" style="text-align:center;margin-bottom:40px">
+    <span class="section-tag">Spectrum Filings</span>
+    <h2 class="section-title">Active ITU Filings</h2>
+  </div>
+  <div class="reveal">
+    <table class="filing-table">
+      <thead>
+        <tr><th>Network</th><th>ITU Filing ID</th><th>Band</th><th>Orbit</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ORBITA-LEO-1</td><td>1030-ITU-L1-2891</td><td>Ka/Ku</td><td>LEO 550 km</td><td><span class="badge badge-gold">NOTIFIED</span></td></tr>
+        <tr><td>ORBITA-GEO-A</td><td>1031-ITU-GA-2892</td><td>Ku/C</td><td>GEO 68.5°E</td><td><span class="badge badge-gold">NOTIFIED</span></td></tr>
+        <tr><td>ORBITA-GEO-B</td><td>1031-ITU-GB-2893</td><td>Ka/V</td><td>GEO 103°W</td><td><span class="badge badge-gold">NOTIFIED</span></td></tr>
+        <tr><td>ORBITA-MEO-1</td><td>1032-ITU-M1-2894</td><td>L/S</td><td>MEO 20,200 km</td><td><span class="badge badge-amber">COORDINATION</span></td></tr>
+        <tr><td>ORBITA-V-BAND</td><td>1033-ITU-V1-2895</td><td>V</td><td>LEO 550 km</td><td><span class="badge badge-amber">ADVANCE PUB.</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="reveal" style="text-align:center;margin-bottom:40px">
+    <span class="section-tag">Compliance Stack</span>
+    <h2 class="section-title">Certifications & Standards</h2>
+  </div>
+  <div class="stack-list reveal">
+    <div class="stack-item"><span class="comp-icon" style="font-size:1.5rem">🔒</span><div><h4>ISO/IEC 17825:2024</h4><p>Information security management for space operations. Certified by Bureau Veritas. Annual audit cycle with zero major findings since certification.</p></div></div>
+    <div class="stack-item"><span class="comp-icon" style="font-size:1.5rem">📡</span><div><h4>CCSDS SLE & CFDP</h4><p>Space Link Extension (SLE) services enable cross-agency telemetry and telecommand. CFDP ensures reliable file delivery over high-latency space links.</p></div></div>
+    <div class="stack-item"><span class="comp-icon" style="font-size:1.5rem">📻</span><div><h4>ITU RR Article 22</h4><p>Space service frequency coordination. All filings coordinated through ITU BR SRS (Space Radio Stations) database with 274 active assignments.</p></div></div>
+    <div class="stack-item"><span class="comp-icon" style="font-size:1.5rem">🌐</span><div><h4>NIST SP 800-53</h4><p>Security controls for space-based communications systems. FedRAMP-equivalent authorisation for US government service contracts.</p></div></div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <a href="index.html" class="nav-logo"><span class="logo-icon"></span>ORBITA</a>
+      <p>Sovereign space communications infrastructure for the next century of human connectivity. ITU-licensed. Globally partnered. Mission-ready.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Capabilities</h4>
+      <ul>
+        <li><a href="capabilities-satellite-broadband.html">Satellite Broadband</a></li>
+        <li><a href="capabilities-secure-government.html">Secure Government</a></li>
+        <li><a href="capabilities-maritime-aviation.html">Maritime & Aviation</a></li>
+        <li><a href="capabilities-direct-broadcast.html">Direct Broadcast</a></li>
+        <li><a href="capabilities-scientific-relay.html">Scientific Relay</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Network</h4>
+      <ul>
+        <li><a href="network-leo-constellation.html">LEO Constellation</a></li>
+        <li><a href="network-geo-platform.html">GEO Platform</a></li>
+        <li><a href="network-ground-stations.html">Ground Stations</a></li>
+        <li><a href="network-spectrum-portfolio.html">Spectrum Portfolio</a></li>
+        <li><a href="network-orbital-filing.html">Orbital Filing</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Organization</h4>
+      <ul>
+        <li><a href="organization-about.html">About ORBITA</a></li>
+        <li><a href="organization-partnerships.html">Partnerships</a></li>
+        <li><a href="organization-itu-compliance.html">ITU Compliance</a></li>
+        <li><a href="organization-careers.html">Careers</a></li>
+        <li><a href="organization-press-media.html">Press & Media</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2026 ORBITA Space Communications. All rights reserved.</span>
+    <span class="footer-itu">ITU FILING: 2891-A · CCSDS COMPLIANT · ISO 17825 CERTIFIED</span>
+  </div>
+</footer>
+
+<script>
+const cursor=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function anim(){rx+=(mx-rx)*0.15;ry+=(my-ry)*0.15;cursor.style.left=mx+'px';cursor.style.top=my+'px';ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(anim);})();
+document.querySelectorAll('a,button,.comp-card,.stack-item').forEach(el=>{el.addEventListener('mouseenter',()=>{cursor.style.width='20px';cursor.style.height='20px';ring.style.width='56px';ring.style.height='56px';ring.style.opacity='0.8';});el.addEventListener('mouseleave',()=>{cursor.style.width='12px';cursor.style.height='12px';ring.style.width='36px';ring.style.height='36px';ring.style.opacity='0.5';});});
+
+const sf=document.getElementById('starfield'),sfc=sf.getContext('2d');let stars=[];
+function rs(){sf.width=innerWidth;sf.height=innerHeight;}
+function is(){stars=[];for(let i=0;i<280;i++){stars.push({x:Math.random()*sf.width,y:Math.random()*sf.height,r:Math.random()*1.4+0.2,alpha:Math.random()*0.7+0.1,speed:Math.random()*0.3+0.05,drift:(Math.random()-0.5)*0.1,twinkle:Math.random()*Math.PI*2});}}
+function ds(t){sfc.clearRect(0,0,sf.width,sf.height);stars.forEach(s=>{s.twinkle+=0.02;const a=s.alpha*(0.6+0.4*Math.sin(s.twinkle));sfc.beginPath();sfc.arc(s.x,s.y,s.r,0,Math.PI*2);sfc.fillStyle=`rgba(255,248,240,${a})`;sfc.fill();s.y+=s.speed*0.2;s.x+=s.drift;if(s.y>sf.height){s.y=0;s.x=Math.random()*sf.width;}});}
+rs();is();addEventListener('resize',()=>{rs();is();});
+
+const nav=document.getElementById('nav');
+addEventListener('scroll',()=>{nav.classList.toggle('scrolled',scrollY>80);});
+
+const revObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.12});
+document.querySelectorAll('.reveal').forEach(r=>revObs.observe(r));
+
+(function loop(t){ds(t);requestAnimationFrame(loop);})();
+</script>
+</body>
+</html>

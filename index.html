@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORBITA — Space Communications</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #020408;
+    --dark: #111111;
+    --dark2: #1A1A1A;
+    --gold: #FFD700;
+    --amber: #FF6B00;
+    --white: #FFF8F0;
+    --gold-dim: rgba(255,215,0,0.15);
+    --amber-dim: rgba(255,107,0,0.15);
+    --white-dim: rgba(255,248,240,0.05);
+    --muted: rgba(255,248,240,0.5);
+    --border: rgba(255,215,0,0.20);
+    --font-display: 'Orbitron', monospace;
+    --font-body: 'Exo 2', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--font-body);
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ── CUSTOM CURSOR ── */
+  .cursor {
+    position: fixed; width: 12px; height: 12px;
+    background: var(--gold); border-radius: 50%;
+    pointer-events: none; z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: width .15s, height .15s, opacity .15s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed; width: 36px; height: 36px;
+    border: 1px solid var(--gold); border-radius: 50%;
+    pointer-events: none; z-index: 9998;
+    transform: translate(-50%,-50%);
+    transition: all .25s ease;
+    opacity: 0.5;
+  }
+
+  /* ── STARFIELD CANVAS ── */
+  #starfield { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: background .4s, backdrop-filter .4s;
+  }
+  nav.scrolled {
+    background: rgba(2,4,8,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: var(--font-display);
+    font-size: 1.1rem; font-weight: 700;
+    letter-spacing: 0.3em;
+    color: var(--white);
+    text-decoration: none;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    position: relative; display: flex; align-items: center; justify-content: center;
+    animation: spin 12s linear infinite;
+  }
+  .logo-icon::before {
+    content: '';
+    position: absolute;
+    width: 6px; height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+    top: -4px; left: 50%; transform: translateX(-50%);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .nav-links { display: flex; gap: 40px; list-style: none; }
+  .nav-links a {
+    font-family: var(--font-display); font-size: 0.65rem;
+    font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted); text-decoration: none;
+    transition: color .25s;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; bottom: -4px; left: 0;
+    width: 0; height: 1px; background: var(--gold);
+    transition: width .3s;
+  }
+  .nav-links a:hover { color: var(--white); }
+  .nav-links a:hover::after { width: 100%; }
+
+  .nav-cta {
+    font-family: var(--font-display); font-size: 0.6rem; font-weight: 700;
+    letter-spacing: 0.25em; text-transform: uppercase;
+    padding: 10px 24px; border: 1px solid var(--gold);
+    background: transparent; color: var(--gold);
+    cursor: none; transition: all .3s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  .nav-cta:hover { background: var(--gold); color: var(--black); }
+
+  /* ── HERO ── */
+  #hero {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  /* Orbit animation system */
+  .orbit-system {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .orbit-ring {
+    position: absolute; border-radius: 50%;
+    border: 1px solid var(--gold-dim);
+    animation: orbit-rotate linear infinite;
+  }
+  .orbit-ring:nth-child(1) { width: 300px; height: 300px; animation-duration: 20s; border-color: rgba(255,215,0,0.2); }
+  .orbit-ring:nth-child(2) { width: 480px; height: 200px; animation-duration: 30s; border-color: rgba(255,215,0,0.12); transform: rotateX(75deg); }
+  .orbit-ring:nth-child(3) { width: 680px; height: 280px; animation-duration: 45s; border-color: rgba(255,107,0,0.1); transform: rotateX(70deg) rotateZ(30deg); }
+  .orbit-ring:nth-child(4) { width: 900px; height: 360px; animation-duration: 60s; border-color: rgba(255,215,0,0.07); transform: rotateX(75deg) rotateZ(-20deg); }
+
+  .satellite {
+    position: absolute; width: 8px; height: 8px;
+    background: var(--gold); border-radius: 50%;
+    box-shadow: 0 0 12px var(--gold), 0 0 24px rgba(255,215,0,0.4);
+  }
+  .satellite::after {
+    content: '';
+    position: absolute; right: 8px; top: 50%;
+    width: 14px; height: 1px;
+    background: linear-gradient(to left, var(--gold), transparent);
+    transform: translateY(-50%);
+  }
+  .orbit-ring:nth-child(1) .satellite { top: -4px; left: 50%; transform: translateX(-50%); }
+  .orbit-ring:nth-child(2) .satellite { right: -4px; top: 50%; transform: translateY(-50%); }
+  .orbit-ring:nth-child(3) .satellite { top: -4px; right: 20%; }
+
+  @keyframes orbit-rotate { to { transform: rotate(360deg); } }
+  .orbit-ring:nth-child(2) { animation: orbit-rotate2 30s linear infinite; }
+  .orbit-ring:nth-child(3) { animation: orbit-rotate3 45s linear infinite; }
+  .orbit-ring:nth-child(4) { animation: orbit-rotate4 60s linear infinite; }
+  @keyframes orbit-rotate2 { from { transform: rotateX(75deg) rotateZ(0deg); } to { transform: rotateX(75deg) rotateZ(360deg); } }
+  @keyframes orbit-rotate3 { from { transform: rotateX(70deg) rotateZ(30deg); } to { transform: rotateX(70deg) rotateZ(390deg); } }
+  @keyframes orbit-rotate4 { from { transform: rotateX(75deg) rotateZ(-20deg); } to { transform: rotateX(75deg) rotateZ(340deg); } }
+
+  .earth-glow {
+    position: absolute; width: 160px; height: 160px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--dark), var(--black));
+    box-shadow: 0 0 60px rgba(255,215,0,0.15), 0 0 120px rgba(255,215,0,0.08), inset 0 0 40px rgba(255,215,0,0.03);
+    pointer-events: none;
+  }
+  .earth-glow::before {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    background: radial-gradient(ellipse at 30% 40%, rgba(255,215,0,0.06), transparent 60%);
+    animation: earth-shimmer 4s ease-in-out infinite alternate;
+  }
+  @keyframes earth-shimmer { to { opacity: 0.4; } }
+
+  .hero-content { position: relative; z-index: 2; }
+
+  .hero-eyebrow {
+    font-family: var(--font-display); font-size: 0.6rem;
+    letter-spacing: 0.5em; color: var(--gold);
+    text-transform: uppercase; margin-bottom: 28px;
+    opacity: 0; animation: fadeUp .8s .3s forwards;
+  }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.8rem, 8vw, 7rem);
+    font-weight: 900; line-height: 0.95;
+    letter-spacing: -0.01em;
+    margin-bottom: 32px;
+    opacity: 0; animation: fadeUp .8s .5s forwards;
+  }
+  .hero-title .line-accent { color: var(--gold); display: block; }
+
+  .hero-sub {
+    font-size: clamp(1rem, 1.5vw, 1.25rem);
+    font-weight: 300; color: var(--muted);
+    max-width: 560px; line-height: 1.7; margin: 0 auto 48px;
+    opacity: 0; animation: fadeUp .8s .7s forwards;
+  }
+
+  .hero-actions {
+    display: flex; gap: 16px; justify-content: center; align-items: center;
+    opacity: 0; animation: fadeUp .8s .9s forwards;
+  }
+
+  .btn-primary {
+    font-family: var(--font-display); font-size: 0.65rem; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 16px 40px; background: var(--gold); color: var(--black);
+    border: none; cursor: none; transition: all .3s;
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+    text-decoration: none; display: inline-block;
+  }
+  .btn-primary:hover { background: var(--white); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(255,215,0,0.3); }
+
+  .btn-secondary {
+    font-family: var(--font-display); font-size: 0.65rem; font-weight: 600;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    padding: 15px 40px; border: 1px solid var(--muted);
+    color: var(--white); background: transparent; cursor: none; transition: all .3s;
+    text-decoration: none; display: inline-block;
+  }
+  .btn-secondary:hover { border-color: var(--white); background: var(--white-dim); }
+
+  .hero-scroll {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    font-family: var(--font-display); font-size: 0.5rem;
+    letter-spacing: 0.3em; color: var(--muted); z-index: 2;
+    animation: fadeIn 1.5s 1.5s both;
+  }
+  .scroll-line {
+    width: 1px; height: 48px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+  @keyframes scrollPulse { 0%,100%{opacity:0.3;transform:scaleY(1)} 50%{opacity:1;transform:scaleY(1.1)} }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    position: relative; z-index: 1;
+    background: rgba(0,0,0,0.8); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+    padding: 32px 60px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+  }
+  .stat-item {
+    padding: 8px 40px; text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-num {
+    font-family: var(--font-display); font-size: 2.2rem; font-weight: 700;
+    color: var(--gold); letter-spacing: -0.02em; line-height: 1;
+    display: block;
+  }
+  .stat-label {
+    font-size: 0.65rem; font-weight: 500; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--muted); margin-top: 6px;
+    display: block;
+  }
+
+  /* ── SECTIONS COMMON ── */
+  section { position: relative; z-index: 1; }
+
+  .section-tag {
+    font-family: var(--font-display); font-size: 0.55rem;
+    letter-spacing: 0.5em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 16px; display: block;
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 700; line-height: 1.1;
+    margin-bottom: 20px;
+  }
+  .section-sub {
+    font-size: 1rem; font-weight: 300; color: var(--muted);
+    line-height: 1.7; max-width: 560px;
+  }
+
+  /* ── SATELLITES SECTION ── */
+  #satellites {
+    padding: 120px 60px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 80px; align-items: center;
+  }
+  .satellites-visual {
+    position: relative; aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sat-3d-ring {
+    position: absolute; border-radius: 50%;
+    border: 1px solid rgba(255,215,0,0.2);
+  }
+  .sat-r1 { width: 100%; height: 100%; animation: spin 20s linear infinite; }
+  .sat-r2 { width: 80%; height: 80%; animation: spin 14s linear infinite reverse; border-color: rgba(255,107,0,0.2); }
+  .sat-r3 { width: 55%; height: 55%; animation: spin 8s linear infinite; border-color: rgba(255,215,0,0.3); }
+
+  .sat-dot {
+    position: absolute; width: 10px; height: 10px; border-radius: 50%;
+    box-shadow: 0 0 16px currentColor;
+  }
+  .sat-dot.gold { background: var(--gold); color: var(--gold); }
+  .sat-dot.amber { background: var(--amber); color: var(--amber); }
+  .sat-dot.white { background: var(--white); color: var(--white); }
+
+  .sat-center-img {
+    width: 100px; height: 100px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2;
+  }
+  .sat-icon-svg { width: 80px; height: 80px; filter: drop-shadow(0 0 20px rgba(255,215,0,0.6)); }
+
+  .sat-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-top: 48px;
+  }
+  .sat-card {
+    background: var(--dark); border: 1px solid var(--border);
+    padding: 24px; transition: all .3s;
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 0px));
+  }
+  .sat-card:hover { border-color: var(--gold); background: var(--gold-dim); transform: translateY(-4px); }
+  .sat-card-icon { font-size: 1.8rem; margin-bottom: 12px; }
+  .sat-card-name { font-family: var(--font-display); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; margin-bottom: 8px; }
+  .sat-card-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+  .sat-card-orbit {
+    margin-top: 12px; font-family: var(--font-display); font-size: 0.55rem;
+    color: var(--gold); letter-spacing: 0.2em;
+  }
+
+  /* ── SERVICES SECTION ── */
+  #services {
+    padding: 120px 60px;
+    background: linear-gradient(to bottom, transparent, var(--dark2) 30%, var(--dark2) 70%, transparent);
+  }
+  .services-header { text-align: center; margin-bottom: 80px; }
+  .services-header .section-sub { margin: 0 auto; }
+
+  .services-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+  }
+  .service-card {
+    background: rgba(0, 0, 0, 0.6); border: 1px solid var(--border);
+    padding: 48px 36px; position: relative; overflow: hidden;
+    transition: all .4s; cursor: default;
+  }
+  .service-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    transform: scaleX(0); transition: transform .4s;
+  }
+  .service-card:hover::before { transform: scaleX(1); }
+  .service-card:hover { background: var(--gold-dim); transform: translateY(-4px); }
+
+  .service-num {
+    font-family: var(--font-display); font-size: 3rem; font-weight: 900;
+    color: rgba(255,215,0,0.08); position: absolute; top: 20px; right: 20px;
+    letter-spacing: -0.05em; line-height: 1;
+  }
+  .service-icon-wrap {
+    width: 56px; height: 56px; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 24px; font-size: 1.5rem;
+    transition: border-color .3s;
+  }
+  .service-card:hover .service-icon-wrap { border-color: var(--gold); }
+  .service-name {
+    font-family: var(--font-display); font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 0.1em; margin-bottom: 16px;
+  }
+  .service-desc { font-size: 0.875rem; color: var(--muted); line-height: 1.7; margin-bottom: 24px; }
+  .service-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    font-family: var(--font-display); font-size: 0.5rem; letter-spacing: 0.15em;
+    padding: 4px 10px; border: 1px solid rgba(255,215,0,0.2);
+    color: var(--muted); text-transform: uppercase;
+  }
+
+  /* ── FREQUENCY SECTION ── */
+  #frequencies {
+    padding: 120px 60px;
+  }
+  .freq-layout { display: grid; grid-template-columns: 1fr 1.2fr; gap: 80px; align-items: start; }
+
+  .freq-bands { margin-top: 48px; display: flex; flex-direction: column; gap: 16px; }
+  .freq-band {
+    display: grid; grid-template-columns: 80px 1fr 100px;
+    align-items: center; gap: 20px;
+    padding: 16px 0; border-bottom: 1px solid var(--border);
+    transition: all .3s;
+  }
+  .freq-band:hover { padding-left: 8px; border-bottom-color: var(--gold); }
+  .band-label {
+    font-family: var(--font-display); font-size: 0.85rem; font-weight: 700;
+    color: var(--white);
+  }
+  .band-bar-wrap { height: 4px; background: var(--white-dim); position: relative; }
+  .band-bar {
+    height: 100%; position: absolute; left: 0; top: 0;
+    transition: width 1.5s cubic-bezier(.16,1,.3,1);
+  }
+  .band-bar.gold { background: linear-gradient(90deg, var(--gold), rgba(255,215,0,0.3)); box-shadow: 0 0 8px rgba(255,215,0,0.5); }
+  .band-bar.amber { background: linear-gradient(90deg, var(--amber), rgba(255,107,0,0.3)); box-shadow: 0 0 8px rgba(255,107,0,0.5); }
+  .band-bar.white { background: linear-gradient(90deg, var(--white), rgba(255,248,240,0.3)); }
+  .band-freq {
+    font-family: var(--font-display); font-size: 0.6rem;
+    color: var(--muted); text-align: right; letter-spacing: 0.1em;
+  }
+  .band-use {
+    font-size: 0.75rem; color: var(--muted); padding-top: 4px;
+    grid-column: 2 / 4;
+  }
+
+  /* Wave canvas */
+  .wave-visual {
+    position: relative; border: 1px solid var(--border);
+    background: var(--dark);
+    padding: 32px;
+  }
+  .wave-label {
+    font-family: var(--font-display); font-size: 0.55rem;
+    letter-spacing: 0.3em; color: var(--gold); margin-bottom: 20px;
+  }
+  #waveCanvas { width: 100%; height: 200px; display: block; }
+  .wave-controls { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .wave-btn {
+    font-family: var(--font-display); font-size: 0.5rem; letter-spacing: 0.15em;
+    padding: 8px 16px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted);
+    cursor: none; transition: all .25s; text-transform: uppercase;
+  }
+  .wave-btn.active, .wave-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+
+  .freq-table { margin-top: 32px; width: 100%; border-collapse: collapse; }
+  .freq-table th {
+    font-family: var(--font-display); font-size: 0.5rem; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .freq-table td {
+    font-size: 0.8rem; color: var(--white);
+    padding: 12px 12px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .freq-table tr:hover td { background: var(--gold-dim); }
+  .freq-badge {
+    display: inline-block; padding: 2px 8px;
+    font-family: var(--font-display); font-size: 0.45rem; letter-spacing: 0.15em;
+    border-radius: 2px; text-transform: uppercase;
+  }
+  .badge-gold { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(255,215,0,0.3); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,107,0,0.3); }
+
+  /* ── COLLABORATION SECTION ── */
+  #collaboration {
+    padding: 120px 60px;
+    background: linear-gradient(to bottom, transparent, var(--dark2) 20%, var(--dark2) 80%, transparent);
+  }
+  .collab-header { text-align: center; margin-bottom: 80px; }
+  .collab-header .section-sub { margin: 0 auto; }
+
+  .globe-section {
+    display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px; align-items: center; margin-bottom: 80px;
+  }
+  .globe-wrap {
+    position: relative; aspect-ratio: 1; max-width: 480px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sat-rotate {
+    width: 100%; height: 100%;
+    animation: spin 20s linear infinite;
+    filter: drop-shadow(0 0 40px rgba(255,215,0,0.3));
+  }
+
+  .partner-list { display: flex; flex-direction: column; gap: 20px; }
+  .partner-item {
+    display: flex; align-items: center; gap: 20px;
+    padding: 20px 24px; border: 1px solid var(--border);
+    background: var(--dark); transition: all .3s;
+    position: relative; overflow: hidden;
+  }
+  .partner-item::after {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--gold); transform: scaleY(0);
+    transition: transform .3s; transform-origin: bottom;
+  }
+  .partner-item:hover::after { transform: scaleY(1); }
+  .partner-item:hover { border-color: rgba(255,215,0,0.3); background: var(--gold-dim); padding-left: 28px; }
+  .partner-flag { font-size: 2rem; line-height: 1; }
+  .partner-info { flex: 1; }
+  .partner-name { font-family: var(--font-display); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .partner-role { font-size: 0.75rem; color: var(--muted); }
+  .partner-status {
+    font-family: var(--font-display); font-size: 0.45rem; letter-spacing: 0.2em;
+    padding: 4px 10px; text-transform: uppercase;
+  }
+  .status-active { color: var(--gold); border: 1px solid rgba(255,215,0,0.3); background: var(--gold-dim); }
+  .status-dev { color: var(--amber); border: 1px solid rgba(255,107,0,0.3); background: var(--amber-dim); }
+
+  /* Mission Map */
+  .mission-map {
+    position: relative; border: 1px solid var(--border);
+    padding: 40px; background: var(--dark);
+    overflow: hidden;
+  }
+  .map-title {
+    font-family: var(--font-display); font-size: 0.6rem;
+    letter-spacing: 0.35em; color: var(--gold); margin-bottom: 24px;
+    text-transform: uppercase;
+  }
+  #worldMap { width: 100%; height: 300px; }
+
+  /* ── GROUND STATIONS ── */
+  #ground-stations { padding: 120px 60px; }
+
+  .stations-header { margin-bottom: 64px; }
+  .stations-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .station-card {
+    border: 1px solid var(--border); background: var(--dark);
+    padding: 28px 24px; position: relative;
+    transition: all .35s; overflow: hidden;
+  }
+  .station-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(31, 31, 31, 0.03), transparent);
+    opacity: 0; transition: opacity .3s;
+  }
+  .station-card:hover::before { opacity: 1; }
+  .station-card:hover { background: var(--gold-dim); border-color: rgba(255,215,0,0.35); transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+
+  .station-ping {
+    position: absolute; top: 16px; right: 16px;
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .station-ping.on { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+  .station-ping.on::after {
+    content: ''; position: absolute; inset: -4px; border-radius: 50%;
+    border: 1px solid rgba(255,215,0,0.3); animation: ping 2s infinite;
+  }
+  .station-ping.standby { background: var(--amber); box-shadow: 0 0 10px var(--amber); }
+  @keyframes ping { to { transform: scale(2); opacity: 0; } }
+
+  .station-icon { font-size: 2rem; margin-bottom: 16px; }
+  .station-name { font-family: var(--font-display); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; margin-bottom: 6px; }
+  .station-loc { font-size: 0.75rem; color: var(--muted); margin-bottom: 16px; }
+  .station-specs { display: flex; flex-direction: column; gap: 6px; }
+  .spec-row { display: flex; justify-content: space-between; font-size: 0.7rem; }
+  .spec-key { color: var(--muted); }
+  .spec-val { font-family: var(--font-display); font-size: 0.6rem; color: var(--gold); letter-spacing: 0.1em; }
+
+  /* ── TELEMETRY SECTION ── */
+  #telemetry {
+    padding: 80px 60px;
+    background: rgba(0,0,0,0.5); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  }
+  .telem-inner { display: flex; align-items: center; gap: 60px; }
+  .telem-label {
+    font-family: var(--font-display); font-size: 0.55rem;
+    letter-spacing: 0.4em; color: var(--muted); text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .telem-stream {
+    flex: 1; font-family: 'Courier New', monospace; font-size: 0.7rem;
+    color: rgba(255,215,0,0.5); overflow: hidden; white-space: nowrap;
+    letter-spacing: 0.08em;
+  }
+  .telem-live {
+    font-family: var(--font-display); font-size: 0.5rem; letter-spacing: 0.3em;
+    color: var(--gold); display: flex; align-items: center; gap: 8px;
+    white-space: nowrap;
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold); box-shadow: 0 0 8px var(--gold);
+    animation: livePulse 1.5s ease-in-out infinite;
+  }
+  @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── CTA SECTION ── */
+  #cta {
+    padding: 160px 60px;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .cta-glow {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,215,0,0.06), transparent 70%);
+    pointer-events: none;
+  }
+  #cta .section-title { font-size: clamp(2rem, 5vw, 4.5rem); max-width: 800px; margin: 0 auto 24px; }
+  #cta .section-sub { margin: 0 auto 48px; text-align: center; }
+  .cta-actions { display: flex; gap: 16px; justify-content: center; }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 60px; position: relative; z-index: 1;
+    background: var(--dark);
+  }
+  .footer-top { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 60px; margin-bottom: 48px; }
+  .footer-brand .nav-logo { margin-bottom: 16px; display: inline-flex; }
+  .footer-brand p { font-size: 0.85rem; color: var(--muted); line-height: 1.7; max-width: 280px; }
+  .footer-col h4 {
+    font-family: var(--font-display); font-size: 0.6rem; font-weight: 700;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--white);
+    margin-bottom: 20px;
+  }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col a { font-size: 0.85rem; color: var(--muted); text-decoration: none; transition: color .2s; }
+  .footer-col a:hover { color: var(--gold); }
+  .footer-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 32px; border-top: 1px solid var(--border);
+  }
+  .footer-copy { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.05em; }
+  .footer-itu {
+    font-family: var(--font-display); font-size: 0.5rem;
+    letter-spacing: 0.25em; color: var(--muted);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity .8s ease, transform .8s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1024px) {
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+    #satellites, .freq-layout, .globe-section { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .services-grid { grid-template-columns: 1fr 1fr; }
+    .stations-grid { grid-template-columns: repeat(2, 1fr); }
+    .footer-top { grid-template-columns: 1fr 1fr; }
+    #satellites, #services, #frequencies, #collaboration, #ground-stations, #cta { padding: 80px 24px; }
+  }
+  @media (max-width: 640px) {
+    .stats-bar { grid-template-columns: 1fr 1fr; padding: 24px; }
+    .services-grid, .stations-grid { grid-template-columns: 1fr; }
+    .hero-actions, .cta-actions { flex-direction: column; align-items: center; }
+    footer { padding: 40px 24px; }
+    .footer-top { grid-template-columns: 1fr; gap: 32px; }
+    .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
+    .sat-grid { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CUSTOM CURSOR -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- STARFIELD -->
+<canvas id="starfield"></canvas>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo">
+    <span class="logo-icon"></span>
+    ORBITA
+  </a>
+  <ul class="nav-links">
+    <li><a href="#satellites">Satellites</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#frequencies">Frequencies</a></li>
+    <li><a href="#collaboration">Collaboration</a></li>
+    <li><a href="#ground-stations">Stations</a></li>
+  </ul>
+  <a href="contact.html"><button class="nav-cta">Contact Mission Control</button></a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="orbit-system">
+    <div class="orbit-ring"><span class="satellite gold"></span></div>
+    <div class="orbit-ring"><span class="satellite amber"></span></div>
+    <div class="orbit-ring"><span class="satellite white"></span></div>
+    <div class="orbit-ring"></div>
+    <div class="earth-glow"></div>
+  </div>
+
+  <div class="hero-content">
+    <span class="hero-eyebrow">Next Generation Space Communications</span>
+    <h1 class="hero-title">
+      Connecting<br>
+      <span class="line-accent">Every Point</span>
+      On Earth
+    </h1>
+    <p class="hero-sub">
+      A sovereign constellation of satellites delivering ultra-low latency broadband, precision telemetry, and secure inter-agency communications across every orbital regime.
+    </p>
+    <div class="hero-actions">
+      <a href="#satellites" class="btn-primary">Explore Constellation</a>
+      <a href="#services" class="btn-secondary">View Services</a>
+    </div>
+  </div>
+
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    <span>SCROLL</span>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <span class="stat-num" data-count="148">0</span>
+    <span class="stat-label">Active Satellites</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num" data-count="32">0</span>
+    <span class="stat-label">Ground Stations</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num" data-count="99.97" data-decimal="2">0</span>
+    <span class="stat-label">% Uptime SLA</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num" data-count="187">0</span>
+    <span class="stat-label">Countries Covered</span>
+  </div>
+</div>
+
+<!-- SATELLITES SECTION -->
+<section id="satellites">
+  <div class="satellites-visual reveal">
+    <div class="sat-3d-ring sat-r1">
+      <span class="sat-dot gold" style="top:-5px;left:50%;transform:translateX(-50%)"></span>
+    </div>
+    <div class="sat-3d-ring sat-r2">
+      <span class="sat-dot amber" style="top:-5px;left:50%;transform:translateX(-50%)"></span>
+    </div>
+    <div class="sat-3d-ring sat-r3">
+      <span class="sat-dot white" style="top:-5px;left:50%;transform:translateX(-50%)"></span>
+    </div>
+    <div class="sat-center-img">
+      <svg class="sat-icon-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="28" y="30" width="24" height="20" rx="2" fill="#0A1628" stroke="#FFD700" stroke-width="1.5"/>
+        <rect x="4" y="33" width="22" height="14" rx="1" fill="#0D1F3A" stroke="#FFD700" stroke-width="1"/>
+        <line x1="4" y1="37" x2="26" y2="37" stroke="#FFD700" stroke-width="0.5" opacity="0.5"/>
+        <line x1="4" y1="40" x2="26" y2="40" stroke="#FFD700" stroke-width="0.5" opacity="0.5"/>
+        <line x1="4" y1="43" x2="26" y2="43" stroke="#FFD700" stroke-width="0.5" opacity="0.5"/>
+        <rect x="54" y="33" width="22" height="14" rx="1" fill="#0D1F3A" stroke="#FFD700" stroke-width="1"/>
+        <line x1="54" y1="37" x2="76" y2="37" stroke="#FFD700" stroke-width="0.5" opacity="0.5"/>
+        <line x1="54" y1="40" x2="76" y2="40" stroke="#FFD700" stroke-width="0.5" opacity="0.5"/>
+        <line x1="54" y1="43" x2="76" y2="43" stroke="#FFD700" stroke-width="0.5" opacity="0.5"/>
+        <ellipse cx="40" cy="24" rx="8" ry="5" fill="none" stroke="#FF6B00" stroke-width="1.5"/>
+        <line x1="40" y1="24" x2="40" y2="30" stroke="#FF6B00" stroke-width="1"/>
+        <path d="M32 18 Q40 10 48 18" stroke="#FF6B00" stroke-width="1" fill="none" opacity="0.6"/>
+        <path d="M28 14 Q40 4 52 14" stroke="#FF6B00" stroke-width="0.8" fill="none" opacity="0.3"/>
+        <rect x="32" y="34" width="16" height="12" rx="1" fill="#FFD700" opacity="0.1"/>
+        <circle cx="40" cy="40" r="3" fill="#FFD700" opacity="0.6"/>
+        <rect x="35" y="50" width="10" height="4" rx="1" fill="#0A1628" stroke="#FFD700" stroke-width="0.8"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="reveal" style="transition-delay: .2s">
+    <span class="section-tag">Constellation Architecture</span>
+    <h2 class="section-title">Multi-Orbit<br>Satellite Network</h2>
+    <p class="section-sub">Four orbital regimes. One seamless communications fabric. From geostationary broadcast platforms to low-Earth broadband swarms, ORBITA operates every altitude.</p>
+
+    <div class="sat-grid">
+      <div class="sat-card">
+        <div class="sat-card-icon">🛰️</div>
+        <div class="sat-card-name">GEO Relay Platform</div>
+        <div class="sat-card-desc">35,786 km equatorial arc. High-throughput broadcast and relay capability covering a full hemisphere.</div>
+        <div class="sat-card-orbit">GEO · 35,786 KM · 24H PERIOD</div>
+      </div>
+      <div class="sat-card">
+        <div class="sat-card-icon">⚡</div>
+        <div class="sat-card-name">LEO Broadband Shell</div>
+        <div class="sat-card-desc">96-satellite LEO constellation delivering sub-30ms latency global internet with 1 Gbps throughput.</div>
+        <div class="sat-card-orbit">LEO · 550 KM · 95 MIN PERIOD</div>
+      </div>
+      <div class="sat-card">
+        <div class="sat-card-icon">🔭</div>
+        <div class="sat-card-name">MEO Navigation Mesh</div>
+        <div class="sat-card-desc">Precision timing and positioning augmentation, compatible with GPS, GLONASS, Galileo, and BeiDou.</div>
+        <div class="sat-card-orbit">MEO · 20,200 KM · 12H PERIOD</div>
+      </div>
+      <div class="sat-card">
+        <div class="sat-card-icon">🌐</div>
+        <div class="sat-card-name">HEO Polar Coverage</div>
+        <div class="sat-card-desc">Molniya orbit satellites serving Arctic and Antarctic regions with continuous 12-hour apogee coverage.</div>
+        <div class="sat-card-orbit">HEO · 500–40,000 KM · ELLIPTICAL</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES SECTION -->
+<section id="services">
+  <div class="services-header reveal">
+    <span class="section-tag">Mission Capabilities</span>
+    <h2 class="section-title">Communications Services</h2>
+    <p class="section-sub">From emergency broadcasting to deep-space telemetry relay — a complete spectrum of sovereign, interoperable communications infrastructure.</p>
+  </div>
+
+  <div class="services-grid">
+    <div class="service-card reveal">
+      <span class="service-num">01</span>
+      <div class="service-icon-wrap">📡</div>
+      <div class="service-name">Satellite Broadband</div>
+      <p class="service-desc">Enterprise-grade, low-latency internet connectivity via our LEO shell. Ideal for maritime, aviation, and remote terrestrial deployments requiring consistent multi-Gbps throughput.</p>
+      <div class="service-tags">
+        <span class="tag">Ka-Band</span>
+        <span class="tag">Ku-Band</span>
+        <span class="tag">V-Band</span>
+        <span class="tag">LEO</span>
+      </div>
+    </div>
+    <div class="service-card reveal" style="transition-delay:.1s">
+      <span class="service-num">02</span>
+      <div class="service-icon-wrap">🔐</div>
+      <div class="service-name">Secure Government Links</div>
+      <p class="service-desc">End-to-end encrypted communications for defense, intelligence, and critical government operations. Quantum-resistant key exchange and anti-jamming waveforms available.</p>
+      <div class="service-tags">
+        <span class="tag">EHF</span>
+        <span class="tag">AEHF</span>
+        <span class="tag">LPI/LPD</span>
+        <span class="tag">Mil-Spec</span>
+      </div>
+    </div>
+    <div class="service-card reveal" style="transition-delay:.2s">
+      <span class="service-num">03</span>
+      <div class="service-icon-wrap">🌊</div>
+      <div class="service-name">Maritime & Aviation</div>
+      <p class="service-desc">Seamless global coverage for vessels at sea and aircraft in flight. Certified GMDSS compatibility, ACARS data link, and passenger broadband from a single aperture.</p>
+      <div class="service-tags">
+        <span class="tag">VSAT</span>
+        <span class="tag">GMDSS</span>
+        <span class="tag">ACARS</span>
+        <span class="tag">AIS</span>
+      </div>
+    </div>
+    <div class="service-card reveal" style="transition-delay:.3s">
+      <span class="service-num">04</span>
+      <div class="service-icon-wrap">🚨</div>
+      <div class="service-name">Emergency & Disaster Relief</div>
+      <p class="service-desc">Rapidly deployable VSAT terminals and priority bandwidth allocation for disaster response, humanitarian corridors, and public safety communications.</p>
+      <div class="service-tags">
+        <span class="tag">COSPAS-SARSAT</span>
+        <span class="tag">EPB</span>
+        <span class="tag">PWS</span>
+      </div>
+    </div>
+    <div class="service-card reveal" style="transition-delay:.4s">
+      <span class="service-num">05</span>
+      <div class="service-icon-wrap">📺</div>
+      <div class="service-name">Direct Broadcast Services</div>
+      <p class="service-desc">DTH television, radio broadcasting, and content distribution at continental scale from our GEO platform. SD, HD, and 4K delivery with conditional access integration.</p>
+      <div class="service-tags">
+        <span class="tag">DTH</span>
+        <span class="tag">DAB+</span>
+        <span class="tag">DVB-S2X</span>
+        <span class="tag">IPTV</span>
+      </div>
+    </div>
+    <div class="service-card reveal" style="transition-delay:.5s">
+      <span class="service-num">06</span>
+      <div class="service-icon-wrap">🔬</div>
+      <div class="service-name">Scientific Telemetry Relay</div>
+      <p class="service-desc">High-volume data downlink for Earth observation, weather satellites, and deep-space probes via our global network of X/S-band ground stations and TDRS-compatible relay.</p>
+      <div class="service-tags">
+        <span class="tag">X-Band</span>
+        <span class="tag">S-Band</span>
+        <span class="tag">TDRS</span>
+        <span class="tag">CCSDS</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FREQUENCIES SECTION -->
+<section id="frequencies">
+  <div class="freq-layout">
+    <div class="reveal">
+      <span class="section-tag">Radio Spectrum</span>
+      <h2 class="section-title">Frequency<br>Allocation & Use</h2>
+      <p class="section-sub">ORBITA is ITU-licensed across the full satellite communications spectrum. Each band optimized for its specific mission role — from L-Band mobile services to V-Band feeder links.</p>
+
+      <div class="freq-bands">
+        <div class="freq-band">
+          <span class="band-label">L-Band</span>
+          <div class="band-bar-wrap"><div class="band-bar gold" style="width:0%" data-width="35%"></div></div>
+          <span class="band-freq">1–2 GHz</span>
+          <span class="band-use">Mobile satellite, GPS augmentation, handheld terminals</span>
+        </div>
+        <div class="freq-band">
+          <span class="band-label">S-Band</span>
+          <div class="band-bar-wrap"><div class="band-bar gold" style="width:0%" data-width="45%"></div></div>
+          <span class="band-freq">2–4 GHz</span>
+          <span class="band-use">Telemetry, tracking & command (TT&C), weather satellites</span>
+        </div>
+        <div class="freq-band">
+          <span class="band-label">C-Band</span>
+          <div class="band-bar-wrap"><div class="band-bar amber" style="width:0%" data-width="55%"></div></div>
+          <span class="band-freq">4–8 GHz</span>
+          <span class="band-use">FSS broadcasting, maritime VSAT, transponder leasing</span>
+        </div>
+        <div class="freq-band">
+          <span class="band-label">Ku-Band</span>
+          <div class="band-bar-wrap"><div class="band-bar gold" style="width:0%" data-width="75%"></div></div>
+          <span class="band-freq">12–18 GHz</span>
+          <span class="band-use">DTH broadcasting, broadband internet, newsgathering</span>
+        </div>
+        <div class="freq-band">
+          <span class="band-label">Ka-Band</span>
+          <div class="band-bar-wrap"><div class="band-bar amber" style="width:0%" data-width="90%"></div></div>
+          <span class="band-freq">26.5–40 GHz</span>
+          <span class="band-use">HTS broadband, in-flight/maritime, enterprise VSAT</span>
+        </div>
+        <div class="freq-band">
+          <span class="band-label">V-Band</span>
+          <div class="band-bar-wrap"><div class="band-bar gold" style="width:0%" data-width="60%"></div></div>
+          <span class="band-freq">40–75 GHz</span>
+          <span class="band-use">Inter-satellite links, feeder uplinks, future HTS</span>
+        </div>
+        <div class="freq-band">
+          <span class="band-label">EHF</span>
+          <div class="band-bar-wrap"><div class="band-bar gold" style="width:0%" data-width="30%"></div></div>
+          <span class="band-freq">30–300 GHz</span>
+          <span class="band-use">Secure military communications, anti-jam waveforms</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal" style="transition-delay:.15s">
+      <div class="wave-visual">
+        <div class="wave-label">SIGNAL WAVEFORM MONITOR · LIVE</div>
+        <canvas id="waveCanvas"></canvas>
+        <div class="wave-controls">
+          <button class="wave-btn active" data-freq="l">L-Band</button>
+          <button class="wave-btn" data-freq="s">S-Band</button>
+          <button class="wave-btn" data-freq="ku">Ku-Band</button>
+          <button class="wave-btn" data-freq="ka">Ka-Band</button>
+          <button class="wave-btn" data-freq="v">V-Band</button>
+        </div>
+      </div>
+
+      <table class="freq-table" style="margin-top:32px">
+        <thead>
+          <tr>
+            <th>Band</th>
+            <th>Uplink (MHz)</th>
+            <th>Downlink (MHz)</th>
+            <th>Service</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>L-Band</td><td>1626.5–1660.5</td><td>1525–1559</td><td>MSS</td>
+            <td><span class="freq-badge badge-gold">ACTIVE</span></td>
+          </tr>
+          <tr>
+            <td>Ku-Band</td><td>14,000–14,500</td><td>11,700–12,750</td><td>FSS/BSS</td>
+            <td><span class="freq-badge badge-gold">ACTIVE</span></td>
+          </tr>
+          <tr>
+            <td>Ka-Band</td><td>27,500–30,000</td><td>17,700–21,200</td><td>HTS</td>
+            <td><span class="freq-badge badge-gold">ACTIVE</span></td>
+          </tr>
+          <tr>
+            <td>V-Band</td><td>47,200–50,200</td><td>37,500–42,500</td><td>ISL/Feeder</td>
+            <td><span class="freq-badge badge-amber">DEPLOY</span></td>
+          </tr>
+          <tr>
+            <td>EHF</td><td>43,500–45,500</td><td>20,200–21,200</td><td>Mil</td>
+            <td><span class="freq-badge badge-amber">CLASSIFIED</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- COLLABORATION SECTION -->
+<section id="collaboration">
+  <div class="collab-header reveal">
+    <span class="section-tag">International Partnerships</span>
+    <h2 class="section-title">Global Collaboration Network</h2>
+    <p class="section-sub">Coordinated with the ITU, CCSDS, and national space agencies across six continents. Building the standards that will govern communications beyond Earth orbit.</p>
+  </div>
+
+  <div class="globe-section">
+    <div class="globe-wrap reveal">
+      <svg class="sat-rotate" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="sat-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFD700" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#FFD700" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle cx="200" cy="200" r="180" fill="url(#sat-glow)"/>
+        <!-- Orbit ring 1 -->
+        <ellipse cx="200" cy="200" rx="170" ry="60" stroke="rgba(255,215,0,0.12)" stroke-width="1" fill="none" transform="rotate(-15 200 200)"/>
+        <circle cx="30" cy="200" r="5" fill="#FFD700" opacity="0.6"/>
+        <!-- Orbit ring 2 -->
+        <ellipse cx="200" cy="200" rx="140" ry="50" stroke="rgba(255,107,0,0.12)" stroke-width="1" fill="none" transform="rotate(10 200 200)"/>
+        <circle cx="340" cy="200" r="5" fill="#FF6B00" opacity="0.6"/>
+        <!-- Orbit ring 3 -->
+        <ellipse cx="200" cy="200" rx="100" ry="36" stroke="rgba(255,215,0,0.15)" stroke-width="1" fill="none"/>
+        <circle cx="100" cy="200" r="5" fill="#FFF8F0" opacity="0.6"/>
+        <!-- Satellite body -->
+        <rect x="155" y="170" width="90" height="60" rx="6" fill="#111111" stroke="#FFD700" stroke-width="2"/>
+        <!-- Solar panels left -->
+        <rect x="55" y="180" width="90" height="40" rx="3" fill="#1A1A1A" stroke="#FFD700" stroke-width="1.5"/>
+        <line x1="55" y1="190" x2="145" y2="190" stroke="#FFD700" stroke-width="0.8" opacity="0.4"/>
+        <line x1="55" y1="200" x2="145" y2="200" stroke="#FFD700" stroke-width="0.8" opacity="0.4"/>
+        <line x1="55" y1="210" x2="145" y2="210" stroke="#FFD700" stroke-width="0.8" opacity="0.4"/>
+        <rect x="40" y="192" width="15" height="16" rx="2" fill="#0D1F3A" stroke="#FFD700" stroke-width="1"/>
+        <!-- Solar panels right -->
+        <rect x="255" y="180" width="90" height="40" rx="3" fill="#1A1A1A" stroke="#FFD700" stroke-width="1.5"/>
+        <line x1="255" y1="190" x2="345" y2="190" stroke="#FFD700" stroke-width="0.8" opacity="0.4"/>
+        <line x1="255" y1="200" x2="345" y2="200" stroke="#FFD700" stroke-width="0.8" opacity="0.4"/>
+        <line x1="255" y1="210" x2="345" y2="210" stroke="#FFD700" stroke-width="0.8" opacity="0.4"/>
+        <rect x="345" y="192" width="15" height="16" rx="2" fill="#0D1F3A" stroke="#FFD700" stroke-width="1"/>
+        <!-- Dish antenna -->
+        <ellipse cx="200" cy="130" rx="35" ry="22" fill="none" stroke="#FF6B00" stroke-width="2"/>
+        <line x1="200" y1="130" x2="200" y2="170" stroke="#FF6B00" stroke-width="1.5"/>
+        <path d="M170 120 Q200 95 230 120" stroke="#FF6B00" stroke-width="1.5" fill="none" opacity="0.5"/>
+        <path d="M162 112 Q200 80 238 112" stroke="#FF6B00" stroke-width="1" fill="none" opacity="0.25"/>
+        <path d="M154 104 Q200 65 246 104" stroke="#FF6B00" stroke-width="0.8" fill="none" opacity="0.12"/>
+        <!-- Body details -->
+        <rect x="165" y="180" width="70" height="38" rx="4" fill="#FFD700" opacity="0.08"/>
+        <circle cx="200" cy="200" r="10" fill="#FFD700" opacity="0.5"/>
+        <circle cx="200" cy="200" r="4" fill="#FFD700"/>
+        <!-- Sensor lens -->
+        <ellipse cx="200" cy="185" rx="12" ry="8" fill="#FFD700" opacity="0.15" stroke="#FFD700" stroke-width="0.5"/>
+        <!-- Thrusters -->
+        <rect x="188" y="230" width="24" height="12" rx="2" fill="#111111" stroke="#FFD700" stroke-width="1.2"/>
+        <rect x="192" y="242" width="16" height="20" rx="1" fill="#FFD700" opacity="0.15"/>
+        <ellipse cx="200" cy="262" rx="6" ry="12" fill="#FF6B00" opacity="0.1"/>
+      </svg>
+    </div>
+    <div class="partner-list reveal" style="transition-delay:.15s">
+      <div class="partner-item">
+        <span class="partner-flag">🇺🇸</span>
+        <div class="partner-info">
+          <div class="partner-name">NASA / JPL</div>
+          <div class="partner-role">Deep Space Network integration & telemetry relay protocols</div>
+        </div>
+        <span class="partner-status status-active">ACTIVE</span>
+      </div>
+      <div class="partner-item">
+        <span class="partner-flag">🇪🇺</span>
+        <div class="partner-info">
+          <div class="partner-name">ESA — European Space Agency</div>
+          <div class="partner-role">GEO payload hosting, Galileo augmentation, ESTRACK links</div>
+        </div>
+        <span class="partner-status status-active">ACTIVE</span>
+      </div>
+      <div class="partner-item">
+        <span class="partner-flag">🇯🇵</span>
+        <div class="partner-info">
+          <div class="partner-name">JAXA — Japan Aerospace</div>
+          <div class="partner-role">Inter-agency data relay, DRTS compatibility, HTS spectrum coordination</div>
+        </div>
+        <span class="partner-status status-active">ACTIVE</span>
+      </div>
+      <div class="partner-item">
+        <span class="partner-flag">🇮🇳</span>
+        <div class="partner-info">
+          <div class="partner-name">ISRO — Indian Space Research</div>
+          <div class="partner-role">South Asia coverage expansion, GSAT transponder cross-leasing</div>
+        </div>
+        <span class="partner-status status-active">ACTIVE</span>
+      </div>
+      <div class="partner-item">
+        <span class="partner-flag">🇦🇪</span>
+        <div class="partner-info">
+          <div class="partner-name">MBRSC — Mohammed Bin Rashid</div>
+          <div class="partner-role">MENA regional hub, GEO arc coordination, ground station access</div>
+        </div>
+        <span class="partner-status status-dev">IN DEVELOPMENT</span>
+      </div>
+      <div class="partner-item">
+        <span class="partner-flag">🇧🇷</span>
+        <div class="partner-info">
+          <div class="partner-name">AEB — Brazilian Space Agency</div>
+          <div class="partner-role">Amazonia coverage, SCD satellite TT&C coordination</div>
+        </div>
+        <span class="partner-status status-dev">IN DEVELOPMENT</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GROUND STATIONS -->
+<section id="ground-stations">
+  <div class="stations-header reveal">
+    <span class="section-tag">Terrestrial Infrastructure</span>
+    <h2 class="section-title">Global Ground Station Network</h2>
+    <p class="section-sub" style="max-width:600px">32 strategic gateway stations ensure every satellite is never more than 4 minutes from a high-throughput ground contact.</p>
+  </div>
+
+  <div class="stations-grid">
+    <div class="station-card reveal">
+      <span class="station-ping on"></span>
+      <div class="station-icon">📡</div>
+      <div class="station-name">ALPHA PRIME</div>
+      <div class="station-loc">Mojave, California, USA</div>
+      <div class="station-specs">
+        <div class="spec-row"><span class="spec-key">Antenna Diameter</span><span class="spec-val">13.0 M</span></div>
+        <div class="spec-row"><span class="spec-key">Bands</span><span class="spec-val">KA / KU / X</span></div>
+        <div class="spec-row"><span class="spec-key">EIRP</span><span class="spec-val">82.4 DBWI</span></div>
+        <div class="spec-row"><span class="spec-key">Contact Window</span><span class="spec-val">18.4 H/DAY</span></div>
+      </div>
+    </div>
+    <div class="station-card reveal" style="transition-delay:.1s">
+      <span class="station-ping on"></span>
+      <div class="station-icon">📡</div>
+      <div class="station-name">AURORA GATEWAY</div>
+      <div class="station-loc">Svalbard, Norway (78°N)</div>
+      <div class="station-specs">
+        <div class="spec-row"><span class="spec-key">Antenna Diameter</span><span class="spec-val">9.1 M</span></div>
+        <div class="spec-row"><span class="spec-key">Bands</span><span class="spec-val">S / X / UHF</span></div>
+        <div class="spec-row"><span class="spec-key">EIRP</span><span class="spec-val">76.2 DBWI</span></div>
+        <div class="spec-row"><span class="spec-key">Coverage</span><span class="spec-val">POLAR ORBIT</span></div>
+      </div>
+    </div>
+    <div class="station-card reveal" style="transition-delay:.2s">
+      <span class="station-ping on"></span>
+      <div class="station-icon">📡</div>
+      <div class="station-name">INDRA STATION</div>
+      <div class="station-loc">Bengaluru, Karnataka, India</div>
+      <div class="station-specs">
+        <div class="spec-row"><span class="spec-key">Antenna Diameter</span><span class="spec-val">11.0 M</span></div>
+        <div class="spec-row"><span class="spec-key">Bands</span><span class="spec-val">KA / KU / C</span></div>
+        <div class="spec-row"><span class="spec-key">EIRP</span><span class="spec-val">80.0 DBWI</span></div>
+        <div class="spec-row"><span class="spec-key">Coverage</span><span class="spec-val">ASIA-PACIFIC</span></div>
+      </div>
+    </div>
+    <div class="station-card reveal" style="transition-delay:.3s">
+      <span class="station-ping standby"></span>
+      <div class="station-icon">📡</div>
+      <div class="station-name">ANDEAN RELAY</div>
+      <div class="station-loc">Atacama, Chile (2,400m)</div>
+      <div class="station-specs">
+        <div class="spec-row"><span class="spec-key">Antenna Diameter</span><span class="spec-val">7.3 M</span></div>
+        <div class="spec-row"><span class="spec-key">Bands</span><span class="spec-val">V / KA / KU</span></div>
+        <div class="spec-row"><span class="spec-key">EIRP</span><span class="spec-val">70.8 DBWI</span></div>
+        <div class="spec-row"><span class="spec-key">Status</span><span class="spec-val">COMMISSIONING</span></div>
+      </div>
+    </div>
+    <div class="station-card reveal" style="transition-delay:.1s">
+      <span class="station-ping on"></span>
+      <div class="station-icon">📡</div>
+      <div class="station-name">OCEANIC HUB</div>
+      <div class="station-loc">Perth, Western Australia</div>
+      <div class="station-specs">
+        <div class="spec-row"><span class="spec-key">Antenna Diameter</span><span class="spec-val">10.0 M</span></div>
+        <div class="spec-row"><span class="spec-key">Bands</span><span class="spec-val">X / S / L</span></div>
+        <div class="spec-row"><span class="spec-key">EIRP</span><span class="spec-val">78.5 DBWI</span></div>
+        <div class="spec-row"><span class="spec-key">Coverage</span><span class="spec-val">INDIAN OCEAN</span></div>
+      </div>
+    </div>
+    <div class="station-card reveal" style="transition-delay:.2s">
+      <span class="station-ping on"></span>
+      <div class="station-icon">📡</div>
+      <div class="station-name">SAHARAN PRIME</div>
+      <div class="station-loc">Dakhla, Morocco</div>
+      <div class="station-specs">
+        <div class="spec-row"><span class="spec-key">Antenna Diameter</span><span class="spec-val">9.6 M</span></div>
+        <div class="spec-row"><span class="spec-key">Bands</span><span class="spec-val">KA / KU / C</span></div>
+        <div class="spec-row"><span class="spec-key">EIRP</span><span class="spec-val">77.1 DBWI</span></div>
+        <div class="spec-row"><span class="spec-key">Coverage</span><span class="spec-val">AFRICA / MENA</span></div>
+      </div>
+    </div>
+    <div class="station-card reveal" style="transition-delay:.3s">
+      <span class="station-ping on"></span>
+      <div class="station-icon">📡</div>
+      <div class="station-name">NORDIC RELAY</div>
+      <div class="station-loc">Kiruna, Sweden</div>
+      <div class="station-specs">
+        <div class="spec-row"><span class="spec-key">Antenna Diameter</span><span class="spec-val">12.0 M</span></div>
+        <div class="spec-row"><span class="spec-key">Bands</span><span class="spec-val">X / KA / S</span></div>
+        <div class="spec-row"><span class="spec-key">EIRP</span><span class="spec-val">81.3 DBWI</span></div>
+        <div class="spec-row"><span class="spec-key">Coverage</span><span class="spec-val">EUROPE / ARCTIC</span></div>
+      </div>
+    </div>
+    <div class="station-card reveal" style="transition-delay:.4s">
+      <span class="station-ping standby"></span>
+      <div class="station-icon">📡</div>
+      <div class="station-name">PACIFIC SENTINEL</div>
+      <div class="station-loc">Guam, USA Territory</div>
+      <div class="station-specs">
+        <div class="spec-row"><span class="spec-key">Antenna Diameter</span><span class="spec-val">8.5 M</span></div>
+        <div class="spec-row"><span class="spec-key">Bands</span><span class="spec-val">EHF / KA / KU</span></div>
+        <div class="spec-row"><span class="spec-key">EIRP</span><span class="spec-val">74.9 DBWI</span></div>
+        <div class="spec-row"><span class="spec-key">Status</span><span class="spec-val">STANDBY</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TELEMETRY LIVE BAR -->
+<div id="telemetry">
+  <div class="telem-inner">
+    <span class="telem-label">LIVE TELEMETRY</span>
+    <div class="telem-stream" id="telemStream">
+      ORBITA-LEO-047 TLM: ALT=549.2km INCL=53.1° RSSI=-82dBm TEMP=+12°C BATT=98.4% RATE=1024Mbps...
+    </div>
+    <span class="telem-live"><span class="live-dot"></span>LINK ACTIVE</span>
+  </div>
+</div>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="cta-glow"></div>
+  <div class="reveal">
+    <span class="section-tag">Join the Mission</span>
+    <h2 class="section-title">Ready to Connect<br><span style="color:var(--gold)">Your World</span> to Ours?</h2>
+    <p class="section-sub">Whether you're a government agency, enterprise, or technology partner — our mission specialists are ready to architect your space communications solution.</p>
+    <div class="cta-actions">
+      <a href="contact.html" class="btn-primary">Request a Consultation</a>
+      <a href="#" class="btn-secondary">Download Capability Brief</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <a href="#" class="nav-logo"><span class="logo-icon"></span>ORBITA</a>
+      <p>Sovereign space communications infrastructure for the next century of human connectivity. ITU-licensed. Globally partnered. Mission-ready.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Capabilities</h4>
+      <ul>
+        <li><a href="capabilities-satellite-broadband.html">Satellite Broadband</a></li>
+        <li><a href="capabilities-secure-government.html">Secure Government</a></li>
+        <li><a href="capabilities-maritime-aviation.html">Maritime & Aviation</a></li>
+        <li><a href="capabilities-direct-broadcast.html">Direct Broadcast</a></li>
+        <li><a href="capabilities-scientific-relay.html">Scientific Relay</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Network</h4>
+      <ul>
+        <li><a href="network-leo-constellation.html">LEO Constellation</a></li>
+        <li><a href="network-geo-platform.html">GEO Platform</a></li>
+        <li><a href="network-ground-stations.html">Ground Stations</a></li>
+        <li><a href="network-spectrum-portfolio.html">Spectrum Portfolio</a></li>
+        <li><a href="network-orbital-filing.html">Orbital Filing</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Organization</h4>
+      <ul>
+        <li><a href="organization-about.html">About ORBITA</a></li>
+        <li><a href="organization-partnerships.html">Partnerships</a></li>
+        <li><a href="organization-itu-compliance.html">ITU Compliance</a></li>
+        <li><a href="organization-careers.html">Careers</a></li>
+        <li><a href="organization-press-media.html">Press & Media</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2026 ORBITA Space Communications. All rights reserved.</span>
+    <span class="footer-itu">ITU FILING: 2891-A · CCSDS COMPLIANT · ISO 17825 CERTIFIED</span>
+  </div>
+</footer>
+
+<script>
+/* ── CURSOR ── */
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function animCursor() {
+  rx += (mx - rx) * 0.15; ry += (my - ry) * 0.15;
+  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(animCursor);
+}
+animCursor();
+document.querySelectorAll('a,button,.sat-card,.service-card,.station-card,.partner-item').forEach(el => {
+  el.addEventListener('mouseenter', () => { cursor.style.width='20px'; cursor.style.height='20px'; ring.style.width='56px'; ring.style.height='56px'; ring.style.opacity='0.8'; });
+  el.addEventListener('mouseleave', () => { cursor.style.width='12px'; cursor.style.height='12px'; ring.style.width='36px'; ring.style.height='36px'; ring.style.opacity='0.5'; });
+});
+
+/* ── STARFIELD ── */
+const sf = document.getElementById('starfield');
+const sfCtx = sf.getContext('2d');
+let stars = [];
+function resizeStarfield() {
+  sf.width = window.innerWidth; sf.height = window.innerHeight;
+}
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 280; i++) {
+    stars.push({
+      x: Math.random() * sf.width,
+      y: Math.random() * sf.height,
+      r: Math.random() * 1.4 + 0.2,
+      alpha: Math.random() * 0.7 + 0.1,
+      speed: Math.random() * 0.3 + 0.05,
+      drift: (Math.random() - 0.5) * 0.1,
+      twinkle: Math.random() * Math.PI * 2
+    });
+  }
+}
+function drawStars(t) {
+  sfCtx.clearRect(0, 0, sf.width, sf.height);
+  stars.forEach(s => {
+    s.twinkle += 0.02;
+    const a = s.alpha * (0.6 + 0.4 * Math.sin(s.twinkle));
+    sfCtx.beginPath();
+    sfCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    sfCtx.fillStyle = `rgba(255,248,240,${a})`;
+    sfCtx.fill();
+    s.y += s.speed * 0.2;
+    s.x += s.drift;
+    if (s.y > sf.height) { s.y = 0; s.x = Math.random() * sf.width; }
+  });
+}
+resizeStarfield(); initStars();
+window.addEventListener('resize', () => { resizeStarfield(); initStars(); });
+
+/* ── NAV SCROLL ── */
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 80);
+});
+
+/* ── COUNTER ANIMATION ── */
+function animateCounters() {
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const target = parseFloat(el.dataset.count);
+    const dec = parseInt(el.dataset.decimal || 0);
+    let cur = 0;
+    const dur = 2000; const step = 16;
+    const inc = target / (dur / step);
+    const timer = setInterval(() => {
+      cur = Math.min(cur + inc, target);
+      el.textContent = dec ? cur.toFixed(dec) : Math.floor(cur);
+      if (cur >= target) clearInterval(timer);
+    }, step);
+  });
+}
+let countersAnimated = false;
+const statsBar = document.querySelector('.stats-bar');
+const statsObs = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting && !countersAnimated) {
+    countersAnimated = true;
+    animateCounters();
+  }
+}, { threshold: 0.3 });
+statsObs.observe(statsBar);
+
+/* ── REVEAL ON SCROLL ── */
+const reveals = document.querySelectorAll('.reveal');
+const revObs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.12 });
+reveals.forEach(r => revObs.observe(r));
+
+/* ── FREQUENCY BARS ── */
+const barObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.band-bar').forEach(bar => {
+        bar.style.width = bar.dataset.width;
+      });
+    }
+  });
+}, { threshold: 0.3 });
+const freqSection = document.getElementById('frequencies');
+if (freqSection) barObs.observe(freqSection);
+
+/* ── WAVE VISUALIZER ── */
+const wc = document.getElementById('waveCanvas');
+const wCtx = wc.getContext('2d');
+const freqConfigs = {
+  l:  { freq: 0.8, amp: 40, color: '#FFD700', noise: 0.3, waves: 1 },
+  s:  { freq: 1.5, amp: 35, color: '#FFD700', noise: 0.4, waves: 2 },
+  ku: { freq: 4.0, amp: 28, color: '#FFD700', noise: 0.5, waves: 3 },
+  ka: { freq: 8.0, amp: 22, color: '#FF6B00', noise: 0.6, waves: 4 },
+  v:  { freq: 18.0, amp: 15, color: '#FFD700', noise: 0.7, waves: 5 }
+};
+let activeFreq = 'l';
+let wt = 0;
+
+function resizeWave() {
+  const rect = wc.parentElement.getBoundingClientRect();
+  wc.width = rect.width - 64; wc.height = 200;
+}
+resizeWave();
+window.addEventListener('resize', resizeWave);
+
+function drawWave() {
+  wt += 0.04;
+  const cfg = freqConfigs[activeFreq];
+  wCtx.clearRect(0, 0, wc.width, wc.height);
+
+  // Grid
+  wCtx.strokeStyle = 'rgba(255,215,0,0.05)';
+  wCtx.lineWidth = 1;
+  for (let gx = 0; gx < wc.width; gx += 40) {
+    wCtx.beginPath(); wCtx.moveTo(gx, 0); wCtx.lineTo(gx, wc.height); wCtx.stroke();
+  }
+  for (let gy = 0; gy < wc.height; gy += 40) {
+    wCtx.beginPath(); wCtx.moveTo(0, gy); wCtx.lineTo(wc.width, gy); wCtx.stroke();
+  }
+
+  for (let w = 0; w < cfg.waves; w++) {
+    wCtx.beginPath();
+    const grad = wCtx.createLinearGradient(0, 0, wc.width, 0);
+    grad.addColorStop(0, 'transparent');
+    grad.addColorStop(0.2, cfg.color + 'aa');
+    grad.addColorStop(0.8, cfg.color + 'aa');
+    grad.addColorStop(1, 'transparent');
+    wCtx.strokeStyle = grad;
+    wCtx.lineWidth = 1.5 - w * 0.2;
+    wCtx.shadowColor = cfg.color;
+    wCtx.shadowBlur = 8;
+
+    const cy = wc.height / 2;
+    const phaseOff = w * 0.5;
+    const ampMult = 1 - w * 0.15;
+
+    wCtx.moveTo(0, cy);
+    for (let x = 0; x < wc.width; x++) {
+      const noise = (Math.random() - 0.5) * cfg.noise * (1 + w * 0.5);
+      const y = cy + Math.sin(x * cfg.freq / 60 + wt + phaseOff) * cfg.amp * ampMult
+                   + Math.sin(x * cfg.freq / 30 * 1.7 + wt * 1.3 + phaseOff) * cfg.amp * 0.3 * ampMult
+                   + noise;
+      wCtx.lineTo(x, y);
+    }
+    wCtx.stroke();
+    wCtx.shadowBlur = 0;
+  }
+
+  // Zero line
+  wCtx.beginPath();
+  wCtx.strokeStyle = 'rgba(255,248,240,0.06)';
+  wCtx.lineWidth = 1;
+  wCtx.moveTo(0, wc.height / 2);
+  wCtx.lineTo(wc.width, wc.height / 2);
+  wCtx.stroke();
+}
+
+document.querySelectorAll('.wave-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.wave-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFreq = btn.dataset.freq;
+  });
+});
+
+
+
+/* ── TELEMETRY STREAM ── */
+const streams = [
+  "ORBITA-LEO-047 TLM: ALT=549.2km INCL=53.1° RSSI=-82dBm TEMP=+12°C BATT=98.4% DL=1.024Gbps",
+  "ORBITA-GEO-003 TLM: SLOT=68.5°E EIRP=52.4dBW ΔPOSITION=0.001° TEMP=+34°C BATT=100% PAYLOAD-A=NOMINAL",
+  "ORBITA-LEO-092 TLM: ALT=547.8km INCL=53.0° RSSI=-84dBm TEMP=+9°C BATT=97.1% DL=987Mbps UL=420Mbps",
+  "ORBITA-MEO-018 TLM: ALT=20,198km INCL=56.0° TIMING-ACCURACY=2.3ns GPS-SYNC=ACTIVE STATUS=NOMINAL",
+  "ORBITA-HEO-005 TLM: ALT=38,922km INCL=63.4° POLAR-COVERAGE=ACTIVE APOGEE=TRUE BATT=99.2%",
+];
+let streamIdx = 0;
+const telemEl = document.getElementById('telemStream');
+setInterval(() => {
+  streamIdx = (streamIdx + 1) % streams.length;
+  telemEl.style.opacity = '0';
+  setTimeout(() => {
+    telemEl.textContent = streams[streamIdx];
+    telemEl.style.opacity = '1';
+    telemEl.style.transition = 'opacity .5s';
+  }, 300);
+}, 4000);
+
+/* ── MAIN ANIMATION LOOP ── */
+function mainLoop(t) {
+  drawStars(t);
+  drawWave();
+  requestAnimationFrame(mainLoop);
+}
+requestAnimationFrame(mainLoop);
+
+window.addEventListener('resize', () => {
+  resizeWave();
+});
+</script>
+</body>
+</html>

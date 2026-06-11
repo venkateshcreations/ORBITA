@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Press & Media — ORBITA Space Communications</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #020408; --dark: #111111; --dark2: #1A1A1A;
+    --gold: #FFD700; --amber: #FF6B00; --white: #FFF8F0;
+    --gold-dim: rgba(255,215,0,0.15); --amber-dim: rgba(255,107,0,0.15);
+    --white-dim: rgba(255,248,240,0.05); --muted: rgba(255,248,240,0.5);
+    --border: rgba(255,215,0,0.20);
+    --font-display: 'Orbitron', monospace; --font-body: 'Exo 2', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--black); color: var(--white);
+    font-family: var(--font-body); font-weight: 300; overflow-x: hidden; cursor: none;
+  }
+  .cursor { position:fixed; width:12px; height:12px; background:var(--gold); border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); transition:width .15s,height .15s,opacity .15s; mix-blend-mode:screen; }
+  .cursor-ring { position:fixed; width:36px; height:36px; border:1px solid var(--gold); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:all .25s ease; opacity:0.5; }
+  #starfield { position:fixed; inset:0; z-index:0; pointer-events:none; }
+  nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:20px 60px; display:flex; align-items:center; justify-content:space-between; transition:background .4s, backdrop-filter .4s; }
+  nav.scrolled { background:rgba(2,4,8,0.85); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); }
+  .nav-logo { font-family:var(--font-display); font-size:1.1rem; font-weight:700; letter-spacing:0.3em; color:var(--white); text-decoration:none; display:flex; align-items:center; gap:12px; }
+  .logo-icon { width:32px; height:32px; border:2px solid var(--gold); border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; animation:spin 12s linear infinite; }
+  .logo-icon::before { content:''; position:absolute; width:6px; height:6px; background:var(--gold); border-radius:50%; top:-4px; left:50%; transform:translateX(-50%); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .nav-links { display:flex; gap:40px; list-style:none; }
+  .nav-links a { font-family:var(--font-display); font-size:0.65rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); text-decoration:none; transition:color .25s; position:relative; }
+  .nav-links a::after { content:''; position:absolute; bottom:-4px; left:0; width:0; height:1px; background:var(--gold); transition:width .3s; }
+  .nav-links a:hover { color:var(--white); }
+  .nav-links a:hover::after { width:100%; }
+  .nav-cta { font-family:var(--font-display); font-size:0.6rem; font-weight:700; letter-spacing:0.25em; text-transform:uppercase; padding:10px 24px; border:1px solid var(--gold); background:transparent; color:var(--gold); cursor:none; transition:all .3s; clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%); text-decoration:none; }
+  .nav-cta:hover { background:var(--gold); color:var(--black); }
+  #hero { position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; overflow:hidden; }
+  .orbit-system { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .orbit-ring { position:absolute; border-radius:50%; border:1px solid var(--gold-dim); }
+  .orbit-ring:nth-child(1) { width:300px; height:300px; animation:orbit-rotate 20s linear infinite; border-color:rgba(255,215,0,0.2); }
+  .orbit-ring:nth-child(2) { width:480px; height:200px; animation:orbit-rotate2 30s linear infinite; border-color:rgba(255,215,0,0.12); transform:rotateX(75deg); }
+  .orbit-ring:nth-child(3) { width:680px; height:280px; animation:orbit-rotate3 45s linear infinite; border-color:rgba(255,107,0,0.1); transform:rotateX(70deg) rotateZ(30deg); }
+  .orbit-ring:nth-child(4) { width:900px; height:360px; animation:orbit-rotate4 60s linear infinite; border-color:rgba(255,215,0,0.07); transform:rotateX(75deg) rotateZ(-20deg); }
+  .satellite { position:absolute; width:8px; height:8px; background:var(--gold); border-radius:50%; box-shadow:0 0 12px var(--gold),0 0 24px rgba(255,215,0,0.4); }
+  .satellite::after { content:''; position:absolute; right:8px; top:50%; width:14px; height:1px; background:linear-gradient(to left,var(--gold),transparent); transform:translateY(-50%); }
+  .orbit-ring:nth-child(1) .satellite { top:-4px; left:50%; transform:translateX(-50%); }
+  .orbit-ring:nth-child(2) .satellite { right:-4px; top:50%; transform:translateY(-50%); }
+  .orbit-ring:nth-child(3) .satellite { top:-4px; right:20%; }
+  @keyframes orbit-rotate { to { transform:rotate(360deg); } }
+  @keyframes orbit-rotate2 { from { transform:rotateX(75deg) rotateZ(0deg); } to { transform:rotateX(75deg) rotateZ(360deg); } }
+  @keyframes orbit-rotate3 { from { transform:rotateX(70deg) rotateZ(30deg); } to { transform:rotateX(70deg) rotateZ(390deg); } }
+  @keyframes orbit-rotate4 { from { transform:rotateX(75deg) rotateZ(-20deg); } to { transform:rotateX(75deg) rotateZ(340deg); } }
+  .earth-glow { position:absolute; width:160px; height:160px; border-radius:50%; background:radial-gradient(circle at 35% 35%,var(--dark),var(--black)); box-shadow:0 0 60px rgba(255,215,0,0.15),0 0 120px rgba(255,215,0,0.08), inset 0 0 40px rgba(255,215,0,0.03); pointer-events:none; }
+  .earth-glow::before { content:''; position:absolute; inset:0; border-radius:50%; background:radial-gradient(ellipse at 30% 40%,rgba(255,215,0,0.06),transparent 60%); animation:earth-shimmer 4s ease-in-out infinite alternate; }
+  @keyframes earth-shimmer { to { opacity:0.4; } }
+  .hero-content { position:relative; z-index:2; }
+  .hero-eyebrow { font-family:var(--font-display); font-size:0.6rem; letter-spacing:0.5em; color:var(--gold); text-transform:uppercase; margin-bottom:28px; opacity:0; animation:fadeUp .8s .3s forwards; }
+  .hero-title { font-family:var(--font-display); font-size:clamp(2.4rem,6vw,5rem); font-weight:900; line-height:0.95; letter-spacing:-0.01em; margin-bottom:24px; opacity:0; animation:fadeUp .8s .5s forwards; }
+  .hero-title .line-accent { color:var(--gold); display:block; }
+  .hero-sub { font-size:clamp(0.95rem,1.3vw,1.15rem); font-weight:300; color:var(--muted); max-width:600px; line-height:1.7; margin:0 auto 40px; opacity:0; animation:fadeUp .8s .7s forwards; }
+  section { position:relative; z-index:1; padding:100px 60px; }
+  .section-tag { font-family:var(--font-display); font-size:0.55rem; letter-spacing:0.5em; text-transform:uppercase; color:var(--gold); margin-bottom:16px; display:block; }
+  .section-title { font-family:var(--font-display); font-size:clamp(1.8rem,3.5vw,2.8rem); font-weight:700; line-height:1.1; margin-bottom:20px; }
+  .section-sub { font-size:0.95rem; font-weight:300; color:var(--muted); line-height:1.7; max-width:680px; }
+  .release-list { display:flex; flex-direction:column; gap:12px; }
+  .release-item { display:grid; grid-template-columns:auto 1fr auto; gap:20px; align-items:center; padding:20px 24px; border:1px solid var(--border); background:var(--dark); transition:all .3s; }
+  .release-item:hover { border-color:var(--gold); background:var(--gold-dim); }
+  .release-date { font-family:var(--font-display); font-size:0.6rem; color:var(--gold); letter-spacing:0.1em; white-space:nowrap; }
+  .release-title { font-family:var(--font-display); font-size:0.7rem; font-weight:600; letter-spacing:0.08em; margin-bottom:4px; }
+  .release-desc { font-size:0.8rem; color:var(--muted); }
+  .release-link { font-family:var(--font-display); font-size:0.45rem; letter-spacing:0.2em; color:var(--gold); text-decoration:none; padding:6px 14px; border:1px solid rgba(255,215,0,0.3); text-transform:uppercase; transition:all .3s; white-space:nowrap; }
+  .release-link:hover { background:var(--gold); color:var(--black); }
+  .media-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .media-card { background:var(--dark); border:1px solid var(--border); padding:32px; text-align:center; transition:all .3s; }
+  .media-card:hover { border-color:var(--gold); background:var(--gold-dim); transform:translateY(-4px); }
+  .media-icon { font-size:2.5rem; margin-bottom:16px; }
+  .media-card h3 { font-family:var(--font-display); font-size:0.75rem; font-weight:700; letter-spacing:0.12em; margin-bottom:8px; }
+  .media-card p { font-size:0.8rem; color:var(--muted); line-height:1.5; margin-bottom:16px; }
+  .media-btn { font-family:var(--font-display); font-size:0.5rem; letter-spacing:0.2em; padding:10px 24px; border:1px solid var(--border); color:var(--muted); background:transparent; text-decoration:none; text-transform:uppercase; transition:all .3s; display:inline-block; cursor:none; }
+  .media-btn:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-dim); }
+  .inquiry-box { border:1px solid var(--border); background:var(--dark); padding:40px; text-align:center; max-width:600px; margin:0 auto; }
+  .inquiry-box h3 { font-family:var(--font-display); font-size:0.8rem; font-weight:700; letter-spacing:0.15em; margin-bottom:12px; }
+  .inquiry-box p { font-size:0.85rem; color:var(--muted); margin-bottom:20px; }
+  .inquiry-box .email-link { font-family:var(--font-display); font-size:0.65rem; color:var(--gold); letter-spacing:0.15em; text-decoration:none; border-bottom:1px solid var(--gold); padding-bottom:2px; }
+  .inquiry-box .email-link:hover { color:var(--white); border-color:var(--white); }
+  footer { border-top:1px solid var(--border); padding:60px; position:relative; z-index:1; background:var(--dark); }
+  .footer-top { display:grid; grid-template-columns:2fr repeat(3,1fr); gap:60px; margin-bottom:48px; }
+  .footer-brand .nav-logo { margin-bottom:16px; display:inline-flex; }
+  .footer-brand p { font-size:0.85rem; color:var(--muted); line-height:1.7; max-width:280px; }
+  .footer-col h4 { font-family:var(--font-display); font-size:0.6rem; font-weight:700; letter-spacing:0.3em; text-transform:uppercase; color:var(--white); margin-bottom:20px; }
+  .footer-col ul { list-style:none; display:flex; flex-direction:column; gap:10px; }
+  .footer-col a { font-size:0.85rem; color:var(--muted); text-decoration:none; transition:color .2s; }
+  .footer-col a:hover { color:var(--gold); }
+  .footer-bottom { display:flex; justify-content:space-between; align-items:center; padding-top:32px; border-top:1px solid var(--border); }
+  .footer-copy { font-size:0.75rem; color:var(--muted); letter-spacing:0.05em; }
+  .footer-itu { font-family:var(--font-display); font-size:0.5rem; letter-spacing:0.25em; color:var(--muted); }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+  .reveal { opacity:0; transform:translateY(40px); transition:opacity .8s ease, transform .8s ease; }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+  @media (max-width:1024px) {
+    nav { padding:16px 24px; } .nav-links { display:none; }
+    .media-grid { grid-template-columns:1fr; }
+    section { padding:80px 24px; }
+    .footer-top { grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:640px) {
+    .release-item { grid-template-columns:1fr; gap:8px; }
+    footer { padding:40px 24px; }
+    .footer-top { grid-template-columns:1fr; gap:32px; }
+    .footer-bottom { flex-direction:column; gap:12px; text-align:center; }
+  }
+  @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<canvas id="starfield"></canvas>
+
+<nav id="nav">
+  <a href="index.html" class="nav-logo"><span class="logo-icon"></span>ORBITA</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="organization-about.html">About</a></li>
+    <li><a href="organization-partnerships.html">Partnerships</a></li>
+    <li><a href="organization-itu-compliance.html">ITU Compliance</a></li>
+    <li><a href="organization-careers.html">Careers</a></li>
+  </ul>
+  <a href="contact.html" class="nav-cta">Contact Mission Control</a>
+</nav>
+
+<section id="hero">
+  <div class="orbit-system">
+    <div class="orbit-ring"><span class="satellite"></span></div>
+    <div class="orbit-ring"><span class="satellite"></span></div>
+    <div class="orbit-ring"><span class="satellite"></span></div>
+    <div class="orbit-ring"></div>
+    <div class="earth-glow"></div>
+  </div>
+  <div class="hero-content">
+    <span class="hero-eyebrow">News & Resources</span>
+    <h1 class="hero-title">Press & <span class="line-accent">Media</span></h1>
+    <p class="hero-sub">The latest news, press releases, and media resources from ORBITA Space Communications. For media inquiries and interview requests, contact our communications team.</p>
+  </div>
+</section>
+
+<section>
+  <div class="reveal" style="text-align:center;margin-bottom:48px">
+    <span class="section-tag">Latest News</span>
+    <h2 class="section-title">Press Releases</h2>
+    <p class="section-sub" style="margin:0 auto">Stay informed on ORBITA's constellation deployment milestones, partnership announcements, spectrum achievements, and technology breakthroughs.</p>
+  </div>
+  <div class="release-list reveal">
+    <div class="release-item"><span class="release-date">2026-05-28</span><div><div class="release-title">ORBITA Completes 148-Satellite Constellation, Reaching Global Coverage</div><div class="release-desc">Final batch of 12 LEO satellites successfully deployed via Falcon 9. Full operational capability declared across all four orbital regimes.</div></div><a href="#" class="release-link">Read More</a></div>
+    <div class="release-item"><span class="release-date">2026-04-12</span><div><div class="release-title">ORBITA Signs V-Band Spectrum Coordination Agreement with ESA</div><div class="release-desc">Joint ITU filing for V-band feeder links over European airspace. Paves the way for 10 Gbps inter-satellite and gateway throughput.</div></div><a href="#" class="release-link">Read More</a></div>
+    <div class="release-item"><span class="release-date">2026-02-19</span><div><div class="release-title">New Ground Station Online: Andean Relay at Atacama, Chile</div><div class="release-desc">7.3-metre multi-band antenna at 2,400m elevation provides exceptional atmospheric transparency for V-band and EHF experimental payloads.</div></div><a href="#" class="release-link">Read More</a></div>
+    <div class="release-item"><span class="release-date">2025-11-03</span><div><div class="release-title">ORBITA Achieves ISO 17825:2024 Certification</div><div class="release-desc">Independent audit confirms information security management system compliance. Certification covers all mission operations centres and ground stations.</div></div><a href="#" class="release-link">Read More</a></div>
+    <div class="release-item"><span class="release-date">2025-08-14</span><div><div class="release-title">ORBITA Selected for NATO Allied Space Communications Framework</div><div class="release-desc">Multi-year contract to provide secure, resilient SATCOM capacity under the NATO Agile SATCOM Pooling and Sharing programme.</div></div><a href="#" class="release-link">Read More</a></div>
+  </div>
+</section>
+
+<section style="background:linear-gradient(to bottom,transparent,var(--dark2) 30%,var(--dark2) 70%,transparent)">
+  <div class="reveal" style="text-align:center;margin-bottom:48px">
+    <span class="section-tag">Resources</span>
+    <h2 class="section-title">Media Kit & Downloads</h2>
+  </div>
+  <div class="media-grid reveal">
+    <div class="media-card"><div class="media-icon">📸</div><h3>Press Kit</h3><p>High-resolution imagery, logos, brand guidelines, and satellite renders for editorial use. Includes B-roll footage of ground station operations.</p><a href="#" class="media-btn">Download Press Kit</a></div>
+    <div class="media-card"><div class="media-icon">📄</div><h3>Capability Brief</h3><p>Technical whitepaper covering constellation architecture, spectrum utilisation, security certifications, and service-level commitments.</p><a href="#" class="media-btn">Download PDF</a></div>
+    <div class="media-card"><div class="media-icon">📊</div><h3>Fact Sheet</h3><p>One-page summary of key statistics: satellites in orbit, ground stations, coverage countries, frequency bands, and partner agencies.</p><a href="#" class="media-btn">Download Fact Sheet</a></div>
+    <div class="media-card"><div class="media-icon">🎤</div><h3>Executive Bios</h3><p>Biographies and high-resolution portraits of ORBITA's executive leadership team and board of directors for media publication.</p><a href="#" class="media-btn">View Bios</a></div>
+  </div>
+</section>
+
+<section>
+  <div class="inquiry-box reveal">
+    <h3>Media Inquiries</h3>
+    <p>For press accreditation, interview requests, or editorial questions, contact our communications team. We aim to respond within 4 business hours.</p>
+    <a href="mailto:media@orbita.space" class="email-link">media@orbita.space</a>
+    <p style="margin-top:12px;font-size:0.75rem">+41 22 555 0180 · Geneva, Switzerland</p>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <a href="index.html" class="nav-logo"><span class="logo-icon"></span>ORBITA</a>
+      <p>Sovereign space communications infrastructure for the next century of human connectivity. ITU-licensed. Globally partnered. Mission-ready.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Capabilities</h4>
+      <ul>
+        <li><a href="capabilities-satellite-broadband.html">Satellite Broadband</a></li>
+        <li><a href="capabilities-secure-government.html">Secure Government</a></li>
+        <li><a href="capabilities-maritime-aviation.html">Maritime & Aviation</a></li>
+        <li><a href="capabilities-direct-broadcast.html">Direct Broadcast</a></li>
+        <li><a href="capabilities-scientific-relay.html">Scientific Relay</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Network</h4>
+      <ul>
+        <li><a href="network-leo-constellation.html">LEO Constellation</a></li>
+        <li><a href="network-geo-platform.html">GEO Platform</a></li>
+        <li><a href="network-ground-stations.html">Ground Stations</a></li>
+        <li><a href="network-spectrum-portfolio.html">Spectrum Portfolio</a></li>
+        <li><a href="network-orbital-filing.html">Orbital Filing</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Organization</h4>
+      <ul>
+        <li><a href="organization-about.html">About ORBITA</a></li>
+        <li><a href="organization-partnerships.html">Partnerships</a></li>
+        <li><a href="organization-itu-compliance.html">ITU Compliance</a></li>
+        <li><a href="organization-careers.html">Careers</a></li>
+        <li><a href="organization-press-media.html">Press & Media</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2026 ORBITA Space Communications. All rights reserved.</span>
+    <span class="footer-itu">ITU FILING: 2891-A · CCSDS COMPLIANT · ISO 17825 CERTIFIED</span>
+  </div>
+</footer>
+
+<script>
+const cursor=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function anim(){rx+=(mx-rx)*0.15;ry+=(my-ry)*0.15;cursor.style.left=mx+'px';cursor.style.top=my+'px';ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(anim);})();
+document.querySelectorAll('a,button,.release-item,.media-card').forEach(el=>{el.addEventListener('mouseenter',()=>{cursor.style.width='20px';cursor.style.height='20px';ring.style.width='56px';ring.style.height='56px';ring.style.opacity='0.8';});el.addEventListener('mouseleave',()=>{cursor.style.width='12px';cursor.style.height='12px';ring.style.width='36px';ring.style.height='36px';ring.style.opacity='0.5';});});
+
+const sf=document.getElementById('starfield'),sfc=sf.getContext('2d');let stars=[];
+function rs(){sf.width=innerWidth;sf.height=innerHeight;}
+function is(){stars=[];for(let i=0;i<280;i++){stars.push({x:Math.random()*sf.width,y:Math.random()*sf.height,r:Math.random()*1.4+0.2,alpha:Math.random()*0.7+0.1,speed:Math.random()*0.3+0.05,drift:(Math.random()-0.5)*0.1,twinkle:Math.random()*Math.PI*2});}}
+function ds(t){sfc.clearRect(0,0,sf.width,sf.height);stars.forEach(s=>{s.twinkle+=0.02;const a=s.alpha*(0.6+0.4*Math.sin(s.twinkle));sfc.beginPath();sfc.arc(s.x,s.y,s.r,0,Math.PI*2);sfc.fillStyle=`rgba(255,248,240,${a})`;sfc.fill();s.y+=s.speed*0.2;s.x+=s.drift;if(s.y>sf.height){s.y=0;s.x=Math.random()*sf.width;}});}
+rs();is();addEventListener('resize',()=>{rs();is();});
+
+const nav=document.getElementById('nav');
+addEventListener('scroll',()=>{nav.classList.toggle('scrolled',scrollY>80);});
+
+const revObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.12});
+document.querySelectorAll('.reveal').forEach(r=>revObs.observe(r));
+
+(function loop(t){ds(t);requestAnimationFrame(loop);})();
+</script>
+</body>
+</html>
